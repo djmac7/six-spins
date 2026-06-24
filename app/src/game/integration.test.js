@@ -96,10 +96,16 @@ describe.runIf(haveReal)('integration — real data contract (grid pool)', () =>
     for (let spin = 0; spin < 6; spin++) {
       const roster = cells.get(`${s.currentSeason}_${s.currentFranchise}`)
       const openAbilities = s.slots.filter((x) => x.status === 'open').map((x) => x.ability)
-      const player = roster.map((id) => playersById.get(id)).find((p) => !s.usedPlayerIds.includes(p.id))
+      // genuinely greedy: best (unused player, open ability) pair on this roster — the pool now
+      // spans every team-year (incl. weaker ones), so picking roster[0] blindly isn't a real
+      // strategy and wouldn't reliably beat the random-skill Monte Carlo median.
+      const avail = roster.map((id) => playersById.get(id)).filter((p) => !s.usedPlayerIds.includes(p.id))
+      expect(avail.length).toBeGreaterThan(0)
+      let player = avail[0], best = openAbilities[0], bestVal = -1
+      for (const p of avail) for (const a of openAbilities) {
+        if (p.ratings[a] > bestVal) { bestVal = p.ratings[a]; player = p; best = a }
+      }
       expect(player).toBeTruthy()
-      let best = openAbilities[0]
-      for (const a of openAbilities) if (player.ratings[a] > player.ratings[best]) best = a
       const last = spin === 5
       const next = last ? { franchise: null, season: null } : drawCell()
       s = reducer(s, { type: 'ASSIGN', playerId: player.id, ability: best, rating: player.ratings[best], nextFranchise: next.franchise, nextSeason: next.season })

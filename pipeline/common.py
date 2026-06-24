@@ -172,20 +172,21 @@ def scoring_guardrail(ts: pd.Series, mu_ts: pd.Series, band: float, gmin: float)
     return np.clip((ts - (mu - band)) / band, gmin, 1.0)
 
 
-def bell_curve(percentile: np.ndarray, mean: float, sd: float) -> np.ndarray:
+def bell_curve(percentile: np.ndarray, mean: float, sd: float, floor: float = 0.0) -> np.ndarray:
     """Reshape a flat 0-100 percentile into a clipped normal distribution so that
     high ratings are scarce/elite instead of uniformly common (a flat percentile
     puts a fixed 10% at 90+; a bell curve makes 90+ a genuine outlier).
 
     Maps each percentile to its z-score, rescales by `sd` around `mean`, and clips
-    to [0, 100]. The median stays ≈ mean, so the overall 'game feel' is preserved
-    while both tails thin out. NaN-safe.
+    to [floor, 100]. The median stays ≈ mean, so the overall 'game feel' is preserved
+    while both tails thin out. `floor` lifts the bottom off a literal 0/1/2 (which a
+    regular-minutes player misreads as "zero skill"); ordering is unchanged. NaN-safe.
     """
     p = np.asarray(percentile, dtype=float)
     out = np.full(p.shape, np.nan)
     mask = ~np.isnan(p)
     z = norm.ppf(np.clip(p[mask] / 100.0, 1e-6, 1.0 - 1e-6))
-    out[mask] = np.clip(mean + sd * z, 0.0, 100.0)
+    out[mask] = np.clip(mean + sd * z, floor, 100.0)
     return out
 
 

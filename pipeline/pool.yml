@@ -8,29 +8,80 @@
 # (new franchise, same year) and Reroll Year (new year, same franchise) only ever land on
 # legal rosters. Ratings are ranked against the whole universe, so editing the pool never
 # re-rates anyone (§0 rule 2).
+#
+# FULL COVERAGE: the pool now spans EVERY franchise and EVERY season present in the filtered
+# universe (era_min_season .. latest), not a hand-picked subset. `seasons: all` tells 05_curate
+# to use every season in the data; `franchises` below carries branding (name + color) for every
+# abbreviation that appears. A team/season with < min_roster qualifying players is still omitted
+# (only legal rosters are playable). Display names fall back to Team Abbrev.csv, colors to gray.
+#
+# FRANCHISE LINEAGE: relocated/renamed teams are MERGED into their CURRENT franchise (see
+# `franchise_lineage`), so the team axis lists each franchise once and its year axis spans every
+# era — picking the Thunder and rerolling Year can land on the 1996 SuperSonics. Each season's
+# roster keeps its era-accurate label ("1996 SuperSonics") but is grouped under the current team.
 
-roster_size: 10            # players kept per (season, franchise) cell (main spec: 8-12)
+roster_size: 10           # players kept per (season, franchise) cell (main spec: 8-12)
 min_roster: 8             # a cell needs >= this many qualifying players to be playable
 
-# franchise display + brand color, keyed by the abbreviation used in `team` (the team axis)
-franchises:
-  CHI: { name: "Bulls",    color: "#CE1141" }
-  GSW: { name: "Warriors", color: "#1D428A" }
-  LAL: { name: "Lakers",   color: "#552583" }
-  SAS: { name: "Spurs",    color: "#000000" }
-  BOS: { name: "Celtics",  color: "#007A33" }
-  MIA: { name: "Heat",     color: "#98002E" }
-  HOU: { name: "Rockets",  color: "#CE1141" }
-  DAL: { name: "Mavericks",color: "#00538C" }
-  TOR: { name: "Raptors",  color: "#CE1141" }
-  DET: { name: "Pistons",  color: "#C8102E" }
-  PHO: { name: "Suns",     color: "#E56020" }
-  MIL: { name: "Bucks",    color: "#00471B" }
-  DEN: { name: "Nuggets",  color: "#0E2240" }
-  PHI: { name: "76ers",    color: "#006BB6" }
-  NYK: { name: "Knicks",   color: "#F58426" }
-  UTA: { name: "Jazz",     color: "#002B5C" }
+# the year axis — `all` = every season in the filtered universe (era_min_season onward).
+# (A explicit list is still honored if you want to narrow the pool back down.)
+seasons: all
 
-# the year axis — iconic seasons spanning the eras (crossed with every franchise above)
-seasons: [1986, 1987, 1989, 1991, 1994, 1996, 1998, 2001, 2003, 2004,
-          2008, 2011, 2013, 2014, 2016, 2017, 2019, 2021, 2023, 2024]
+# relocated/renamed -> current franchise. The team AXIS dedupes to the current abbreviation;
+# rosters from the old abbreviation are grouped under it (era-accurate labels are preserved).
+franchise_lineage:
+  SEA: OKC                 # Seattle SuperSonics  -> Oklahoma City Thunder
+  WSB: WAS                 # Washington Bullets   -> Washington Wizards
+  NJN: BRK                 # New Jersey Nets      -> Brooklyn Nets
+  VAN: MEM                 # Vancouver Grizzlies  -> Memphis Grizzlies
+  KCK: SAC                 # Kansas City Kings    -> Sacramento Kings
+  SDC: LAC                 # San Diego Clippers   -> Los Angeles Clippers
+  CHH: CHO                 # Charlotte Hornets (original) -> Charlotte Hornets (current)
+  CHA: CHO                 # Charlotte Bobcats    -> Charlotte Hornets (current)
+  NOH: NOP                 # New Orleans Hornets  -> New Orleans Pelicans
+  NOK: NOP                 # New Orleans/OKC Hornets -> New Orleans Pelicans
+
+# franchise display + brand color, keyed by the abbreviation used in `team` (the team axis).
+# Covers every franchise (incl. relocated/defunct: SEA, WSB, NJN, VAN, CHH, KCK, SDC, ...) that
+# appears in the 1980+ universe. Names come from Team Abbrev.csv; colors are the team's era brand.
+franchises:
+  ATL: { name: "Hawks",        color: "#E03A3E" }
+  BOS: { name: "Celtics",      color: "#007A33" }
+  BRK: { name: "Nets",         color: "#000000" }
+  CHA: { name: "Bobcats",      color: "#F9423A" }
+  CHH: { name: "Hornets",      color: "#00788C" }
+  CHI: { name: "Bulls",        color: "#CE1141" }
+  CHO: { name: "Hornets",      color: "#1D1160" }
+  CLE: { name: "Cavaliers",    color: "#860038" }
+  DAL: { name: "Mavericks",    color: "#00538C" }
+  DEN: { name: "Nuggets",      color: "#0E2240" }
+  DET: { name: "Pistons",      color: "#C8102E" }
+  GSW: { name: "Warriors",     color: "#1D428A" }
+  HOU: { name: "Rockets",      color: "#CE1141" }
+  IND: { name: "Pacers",       color: "#002D62" }
+  KCK: { name: "Kings",        color: "#5A2D81" }
+  LAC: { name: "Clippers",     color: "#C8102E" }
+  LAL: { name: "Lakers",       color: "#552583" }
+  MEM: { name: "Grizzlies",    color: "#5D76A9" }
+  MIA: { name: "Heat",         color: "#98002E" }
+  MIL: { name: "Bucks",        color: "#00471B" }
+  MIN: { name: "Timberwolves", color: "#0C2340" }
+  NJN: { name: "Nets",         color: "#002A60" }
+  NOH: { name: "Hornets",      color: "#00788C" }
+  NOK: { name: "Hornets",      color: "#00788C" }
+  NOP: { name: "Pelicans",     color: "#0C2340" }
+  NYK: { name: "Knicks",       color: "#F58426" }
+  OKC: { name: "Thunder",      color: "#007AC1" }
+  ORL: { name: "Magic",        color: "#0077C0" }
+  PHI: { name: "76ers",        color: "#006BB6" }
+  PHO: { name: "Suns",         color: "#E56020" }
+  POR: { name: "Trail Blazers",color: "#E03A3E" }
+  SAC: { name: "Kings",        color: "#5A2D81" }
+  SAS: { name: "Spurs",        color: "#000000" }
+  SDC: { name: "Clippers",     color: "#C8102E" }
+  SEA: { name: "SuperSonics",  color: "#006B3C" }
+  TOR: { name: "Raptors",      color: "#CE1141" }
+  UTA: { name: "Jazz",         color: "#002B5C" }
+  VAN: { name: "Grizzlies",    color: "#00B2A9" }
+  WAS: { name: "Wizards",      color: "#002B5C" }
+  WSB: { name: "Bullets",      color: "#C8102E" }

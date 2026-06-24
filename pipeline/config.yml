@@ -56,33 +56,64 @@ weights:
   shooting:                   # shooting SKILL = make-rate + FT touch (volume/impact lives in `scoring`).
                               # Efficiency-led so great-but-lower-volume shooters (Bird) aren't buried;
                               # score3 keeps a light volume floor + EB-shrinkage guards tiny samples.
+                              # score3/mid_range are MUTUALLY GATED by shot profile (see shooting_2pt_gate):
+                              # a 3pt shooter gets {fg3,ft,score3} (== the old behavior exactly); a non-3pt
+                              # shooter swaps score3 -> mid_range so a competent mid-range jump-shooter floors
+                              # near average instead of bottoming out on a meaningless 3pt-volume penalty.
+                              # mid_range is a MEASURED 10-16ft/16ft-3pt make-rate (1997+ shot-location data
+                              # only) — NOT blanket 2P%, so rim-running dunkers get NO false shooting credit.
     fg3_pct: 0.50             # x3p_percent + x3pa       (shrunk — primary: 3pt make rate)
     ft_pct: 0.35             # ft_percent + fta         (shrunk — era-neutral shooting touch)
-    score3: 0.15              # 3 * x3p, TS%-gated       (light volume floor: must actually shoot 3s)
+    score3: 0.15              # 3 * x3p, TS%-gated       (SHOOTERS only: light 3pt volume floor)
+    mid_range: 0.15           # 10-16ft + 16ft-3pt FG%   (NON-shooters w/ real mid-range data only)
   scoring:                    # VOLUME-led, ERA-RELATIVE (ranked within season — see era_relative_ratings).
-                              # PPG leads so a season's scoring leader rates elite in any era; efficiency
-                              # is light + 3pt-NEUTRAL (adj_ts) so non-3pt shooters aren't penalized.
-    pts_rate: 0.80            # points per game                  (era-relative VOLUME — leads)
+                              # PPG leads so a season's scoring leader rates elite in any era. Efficiency uses
+                              # REAL TS% (counts 3s at full value): a 3pt-NEUTRAL efficiency erased exactly the
+                              # value of elite high-volume shooters, so Curry scoring 27/29 ppg at .64 TS rated
+                              # BELOW lower-volume, lower-efficiency 2pt scorers. Real TS doesn't penalize 2pt
+                              # scorers (volume still leads; Malone/Dantley/Giannis stay 100) — it just stops
+                              # erasing the 3pt premium and separates efficient stars from empty-volume scorers.
+    pts_rate: 0.75            # points per game                  (era-relative VOLUME — leads)
     usg: 0.10                 # usg_percent                      (shot-creation load)
-    adj_ts: 0.10              # 3pt-neutral shot-making %        (light EFFICIENCY)
-  playmaking:                 # creation-led (volume + rate); ball-security via the single usage-fair
+    ts_eff: 0.15              # true shooting %                  (real EFFICIENCY — 3s at full value)
+  playmaking:                 # creation-led (volume + rate + LOAD); ball-security via the single usage-fair
                               # ast%/tov% (raw ast/to dropped — it double-counted low-TO pass specialists
-                              # like Calderón). usage-fair security keeps high-usage engines (LeBron) high.
-    ast_total: 0.45           # ast (season total)      (ABSOLUTE volume — separates GOAT creators)
-    ast_pct: 0.35             # ast_percent             (creation rate; credibility-shrunk on MP)
-    ast_security: 0.20        # ast% / tov%             (usage-fair ball security; credibility-shrunk on ast+TO)
-  perimeter_d:                # rebalanced: steals (gambling-biased) no longer dominate; lean on dbpm + volume
-    stl_pct: 0.35             # stl_percent              (credibility-shrunk on MP)
-    dbpm: 0.45                # dbpm                     (credibility-shrunk on MP)
-    stl_total: 0.20           # stl (season total)      (ABSOLUTE volume — rewards durable on-ball defenders)
+                              # like Calderón). ast_total alone over-rewarded pure-volume floor generals on
+                              # bad/fast teams (John Wall 100s) over efficient dual scorer-creators — so
+                              # creation_load (ast% x usage) credits CREATING WHILE carrying a scoring load,
+                              # lifting LeBron/Luka/Harden's primary-engine years without making non-passing
+                              # scorers elite (a low-assist chucker still scores ~0 — ast% is the base).
+    ast_total: 0.34           # ast (season total)      (ABSOLUTE volume — separates GOAT creators)
+    ast_pct: 0.30             # ast_percent             (creation rate; credibility-shrunk on MP)
+    ast_security: 0.16        # ast% / tov%             (usage-fair ball security; credibility-shrunk on ast+TO)
+    creation_load: 0.20       # ast_percent x usg%      (creation under scoring load; credibility-shrunk on MP)
+  perimeter_d:                # rebalanced: steals (gambling-biased) no longer dominate; lean on dbpm + volume.
+                              # dbpm is WHOLE-court box +/-, so its credit here is gated DOWN for shot-blocking
+                              # rim anchors (see perimeter_gate) — otherwise Robinson/Ewing/Hakeem leak in as
+                              # elite PERIMETER defenders. The box score CAN'T see low-steal point-of-attack
+                              # containment, so def_accolade (All-Defense/DPOY) supplies that missing signal —
+                              # lifting stoppers (Bowen/Klay/Smart) and tempering high-steal gamblers (Rubio/AI).
+    stl_pct: 0.19             # stl_percent              (credibility-shrunk on MP)
+    dbpm: 0.26                # dbpm                     (credibility-shrunk on MP; block-rate-gated)
+    stl_total: 0.10           # stl (season total)      (ABSOLUTE volume — rewards durable on-ball defenders)
+    def_accolade: 0.45        # All-Defense + DPOY       (containment the box score misses; block-rate-gated to guards).
+                              # NOTE residual limits: a player the box score rates NEGATIVE on defense every year
+                              # (Klay, dbpm<0) can't be fully rescued by a modest honor weight, and a historic-steal
+                              # season with no honor (Iverson 2001, 2.5 spg) still reads as elite — box-score irreducibles.
     # NOTE: dws (defensive win shares) was tried here but REMOVED — being a cumulative,
     # team-context stat it rewards big minutes on good defenses and INFLATED exactly the
     # star offensive guards we wanted to temper. Box-score data cannot mark a high-steal,
     # positive-dbpm guard (e.g. prime Curry/CP3) as a poor perimeter defender.
-  rim_protection:             # volume added so durable rim protectors outrank low-minute rate spikers
-    blk_pct: 0.50             # blk_percent              (credibility-shrunk on MP)
-    dbpm: 0.25                # dbpm                     (credibility-shrunk on MP)
-    blk_total: 0.25           # blk (season total)      (ABSOLUTE volume)
+  rim_protection:             # volume added so durable rim protectors outrank low-minute rate spikers.
+                              # NOT blocks-only: box scores miss no-foul verticality/deterrence, so a great
+                              # interior anchor who doesn't swat (Bam Adebayo) was stuck ~70s on blk_pct alone.
+                              # drb_pct adds the "ends the defensive possession" signal — it lifts true anchors
+                              # (Bam, Gobert) and tempers one-dimensional shot-blockers who don't rebound (Bol).
+    blk_pct: 0.36             # blk_percent              (credibility-shrunk on MP)
+    dbpm: 0.21                # dbpm                     (credibility-shrunk on MP)
+    blk_total: 0.15           # blk (season total)      (ABSOLUTE volume)
+    drb_pct: 0.12             # drb_percent              (interior possession-ending; credibility-shrunk on MP)
+    def_accolade: 0.16        # All-Defense + DPOY       (rebounding-gated to interior anchors — credits no-swat Bam)
   rebounding:                 # volume added (§5 override) so high-minute anchors aren't outranked by
                               # low-minute rate compilers (cf. shooting); trb% still the primary signal
     trb_pct: 0.40             # trb_percent              (credibility-shrunk on MP)
@@ -98,13 +129,15 @@ weights:
 # `volume` names a column or a derived key: fga = x2pa+x3pa, ast_plus_tov = ast+tov.
 credibility:
   ast_pct:      { volume: mp,          K: 400 }   # assist rate backed by minutes
+  creation_load: { volume: mp,         K: 400 }   # ast% x usg creation load, backed by minutes
   ast_security: { volume: ast_plus_tov, K: 80 }   # ast%/tov% ratio backed by ast+TO volume
-  stl_pct:      { volume: mp,          K: 400 }   # steal rate backed by minutes
+  stl_pct:      { volume: mp,          K: 700 }   # steal rate backed by minutes (raised: noisiest box rate -> thin-sample specialists were over-rated)
   dbpm:         { volume: mp,          K: 400 }   # box +/- stabilizes with minutes
-  blk_pct:      { volume: mp,          K: 400 }   # block rate backed by minutes
+  blk_pct:      { volume: mp,          K: 700 }   # block rate backed by minutes (raised: stops sub-1300-MP block-rate spikes topping rim_protection)
   trb_pct:      { volume: mp,          K: 300 }   # rebound rates backed by minutes
   oreb_pct:     { volume: mp,          K: 300 }
   dreb_pct:     { volume: mp,          K: 300 }
+  drb_pct:      { volume: mp,          K: 300 }   # rim_protection's defensive-rebound signal (same backing as dreb_pct)
 
 # --- scoring-volume efficiency guardrails (§7): a scoring-VOLUME component is multiplied by
 # an efficiency gate g = clip((eff - (season_mean_eff - band)) / band, gmin, 1) so volume only
@@ -113,6 +146,63 @@ credibility:
 shooting_guardrail:           # shooting's 3pt scoring volume — gate on TS% (3pt efficiency relevant)
   band: 0.06
   gmin: 0.10
+
+# --- §7 shooting shot-profile gate: a player below this 3-point ATTEMPT RATE (3PA/FGA) is treated
+# as a non-perimeter-shooter — score3 (3pt volume floor) is dropped and the mid_range component
+# (measured 10-16ft + 16ft-3pt make-rate) takes its slot. Genuine 3pt shooters keep the original
+# {fg3,ft,score3} mix UNCHANGED (mid_range absent for them). The mid_range credit only applies where
+# we actually have shot-location data showing real mid-range attempts (1997+, see `mid_range` below),
+# so pre-1997 bigs and rim-running dunkers get NO fabricated jump-shooting credit — they fall back to
+# {fg3(neutral prior), ft} and are simply floored off zero by `curve.floor`.
+shooting_2pt_gate:
+  min_3par: 0.10              # x3p_ar (share of FGA that are 3s) >= this -> scored as a 3pt shooter
+  nonshooter_cap: 82         # a non-3pt shooter's shooting is INFERRED from FT%/mid-range, so it can't
+                             # be confirmed elite — cap it below the proven-shooter tier (a great-touch
+                             # big like McHale/Sikma tops out here; the 90+ leaderboard stays 3pt shooters)
+
+# --- §7 mid-range make-rate (NON-shooters' shooting credit): combine the 10-16ft and 16ft-to-3pt
+# shot-location bands into one attempt-weighted FG%, EB-shrunk toward the season league mid-range mean.
+# Present ONLY for rows with real shot-location data (1997+) AND nonzero mid-range attempts — a player
+# who never takes a mid-range shot has no measured jumper, so the component is absent (weights
+# renormalize to {fg3,ft}). This is the "only correct for 2pt shooting if it's actually a mid-range
+# shot" rule: dunkers (0-3ft) and pre-data eras never get phantom shooting credit.
+mid_range:
+  enabled: true
+  min_season: 1997
+  K: 100                      # EB-shrink mid-range FG% on estimated mid-range attempts toward season mean
+  min_attempts: 20            # require real mid-range VOLUME — below this the shrunk-to-mean value ranks
+                              # ~mid and would falsely credit a dunker who took 1-2 mid-range shots
+
+# --- §7 perimeter_d decoupling: dbpm is WHOLE-court defensive box +/-, so high-block rim anchors
+# (Robinson, Ewing, Hakeem) leaked in as elite PERIMETER defenders. Discount each player's dbpm credit
+# in perimeter_d by a block-rate gate g = clip((blk_hi - blk%)/(blk_hi - blk_lo), gmin, 1): full credit
+# at/below blk_lo (true perimeter players — Payton/Pippen/Kawhi unaffected), ramping to gmin at blk_hi
+# (rim protectors). Steal components are untouched — steals are genuine perimeter events.
+perimeter_gate:
+  blk_lo: 2.0                 # blk% at/below which dbpm gets full perimeter credit
+  blk_hi: 5.0                 # blk% at/above which dbpm credit is floored to gmin
+  gmin: 0.20
+
+# --- §7 defensive-accolade signal: All-Defensive Team selections + DPOY vote share, ingested in
+# 01_ingest into a per-(player,season) `def_accolade` value = (1st-team or 2nd-team points) + DPOY
+# share. This is the one NON-box-score signal in the pipeline — it exists because no box-score stat
+# can measure on-ball containment (the reason Bruce Bowen, 8x All-Defense, rated only 83 on steals).
+# Still fully deterministic (§0): it's recorded voting data, not a model output. Kept a MODEST weight
+# so the box score still leads; it nudges, not dominates.
+defensive_accolade:
+  enabled: true
+  all_def_1st: 1.0           # All-Defensive 1st Team selection value
+  all_def_2nd: 0.75          # All-Defensive 2nd Team selection value (raised: lifts one-time 2nd-teamers like Klay)
+  dpoy_share: 1.0            # multiplier on DPOY vote share (0-1) added on top
+
+# --- §7 rim accolade routing: the accolade is position-blind, so route its rim_protection credit to
+# INTERIOR defenders by defensive-rebound rate (NOT block rate — that would exclude no-swat anchors
+# like Bam). Full credit for big-man drb%, floored to gmin for perimeter players (a guard's
+# All-Defense honor feeds his perimeter_d, not his rim_protection).
+rim_accolade_gate:
+  drb_lo: 12.0               # drb% at/below which accolade gives ~gmin rim credit (guards)
+  drb_hi: 22.0               # drb% at/above which accolade gives full rim credit (interior anchors)
+  gmin: 0.20
 
 # --- era normalization: these ratings rank each component WITHIN season instead of across the
 # whole cross-era universe, so a player is judged vs his own-year peers (pace/era neutral) —
@@ -128,9 +218,12 @@ era_relative_ratings: ["scoring"]
 # scarcity knob (smaller sd -> fewer 90s). Set `curve: null` to keep the flat percentile.
 curve:
   mean: 50                    # median player ~ 50
-  sd: 16                      # tight: ~0.7% of seasons reach 90+, ~0.1% at 100 — high scores are scarce
+  sd: 18                      # softened from 16: high ratings a bit less punishing (90+ ~1.3% of seasons);
+                              # still scarce, monotonic, so leaderboards/top-K ranks are unchanged
+  floor: 5                    # clip the bottom off literal 0/1/2 — a regular rating those misreads as
+                              # "zero skill"; ordering is preserved, the very bottom just compresses to >=5
   sd_by_rating:
-    scoring: 20               # softer ONLY for scoring (~2.4% at 90+) so era-relative scoring
+    scoring: 22               # softer ONLY for scoring (~3.6% at 90+) so era-relative scoring
                               # leaders reliably clear 90 in any era
 
 # --- §11 QA expectations: names that must surface near the top of each ability ---

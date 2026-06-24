@@ -77,17 +77,51 @@ def main():
     # --- join on the rating-unit key; advanced is the spine ---
     df = adv1.merge(totals_1, on=KEY, how="left").merge(per100_1, on=KEY, how="left")
 
-    # optional at-rim source (Player Shooting, 1997+) — merged if present (§7)
-    if cfg.get("at_rim", {}).get("enabled"):
-        shooting = read_table(cfg, "Player Shooting.csv", [
-            "season", "player_id", "team", "fg_percent_from_x0_3_range",
-            "percent_fga_from_x0_3_range",
-        ])
+    # optional shot-location source (Player Shooting, 1997+) — merged if present (§7).
+    # Carries both the at-rim (0-3ft) band and the two mid-range bands (10-16ft, 16ft-3pt)
+    # used by the non-shooter mid_range component; all gated on having the data downstream.
+    if cfg.get("at_rim", {}).get("enabled") or cfg.get("mid_range", {}).get("enabled"):
+        shoot_cols = [
+            "fg_percent_from_x0_3_range", "percent_fga_from_x0_3_range",
+            "fg_percent_from_x10_16_range", "percent_fga_from_x10_16_range",
+            "fg_percent_from_x16_3p_range", "percent_fga_from_x16_3p_range",
+        ]
+        shooting = read_table(cfg, "Player Shooting.csv",
+                              ["season", "player_id", "team"] + shoot_cols)
         sh1 = reduce_rows(
-            shooting[["season", "player_id", "team",
-                      "fg_percent_from_x0_3_range", "percent_fga_from_x0_3_range"]]
+            shooting[["season", "player_id", "team"] + shoot_cols]
         ).drop(columns=[c for c in ("team",) if c not in KEY])
         df = df.merge(sh1, on=KEY, how="left")
+
+    # --- optional defensive-accolade signal (§7): All-Defensive Team selections + DPOY vote
+    # share. These season-level HONORS encode the on-ball/point-of-attack containment the box
+    # score is blind to (steals/dbpm reward ball-hawking, not staying in front of your man), so
+    # they correct the systematic under-rating of low-event stoppers (Bowen/Klay/Smart) and the
+    # over-rating of high-steal gamblers (who never make these teams). Joined on (season,
+    # player_id) — a season-level honor broadcasts across a traded player's team stints. ---
+    acc_cfg = cfg.get("defensive_accolade", {})
+    if acc_cfg.get("enabled"):
+        eot = read_table(cfg, "End of Season Teams.csv",
+                         ["season", "lg", "type", "number_tm", "player_id"])
+        alld = eot[(eot["type"] == "All-Defense") & (eot["lg"] == "NBA")].copy()
+        alld["_acc"] = alld["number_tm"].map({
+            "1st": float(acc_cfg.get("all_def_1st", 1.0)),
+            "2nd": float(acc_cfg.get("all_def_2nd", 0.6))}).fillna(0.0)
+        alld_acc = alld.groupby(["season", "player_id"])["_acc"].max()
+
+        shares = read_table(cfg, "Player Award Shares.csv",
+                            ["season", "award", "player_id", "share"])
+        dpoy = shares[shares["award"] == "nba dpoy"].copy()
+        dpoy["_dpoy"] = (pd.to_numeric(dpoy["share"], errors="coerce").fillna(0.0)
+                         * float(acc_cfg.get("dpoy_share", 1.0)))
+        dpoy_acc = dpoy.groupby(["season", "player_id"])["_dpoy"].max()
+
+        acc = (pd.DataFrame({"_alldef": alld_acc})
+               .join(pd.DataFrame({"_dpoy": dpoy_acc}), how="outer").fillna(0.0))
+        acc["def_accolade"] = acc["_alldef"] + acc["_dpoy"]
+        acc = acc.reset_index()[["season", "player_id", "def_accolade"]]
+        df = df.merge(acc, on=["season", "player_id"], how="left")
+    df["def_accolade"] = pd.to_numeric(df.get("def_accolade"), errors="coerce").fillna(0.0)
 
     # --- team membership for rosters: the per-team (non-aggregate) rows (§3) ---
     tm = totals[["season", "player_id", "team", "mp", "lg"]].copy()

@@ -51,6 +51,9 @@ def main():
     scored["id"] = [pid(p, s, t) for p, s, t in zip(scored["player_id"], scored["season"], id_team)]
     by_id = scored.set_index("id")
     franchises = pool.get("franchises", {})
+    # relocated/renamed -> current franchise (team axis dedupes to the current abbreviation)
+    lineage = pool.get("franchise_lineage", {})
+    cur = lambda t: lineage.get(t, t)
 
     # per-game box-score stats shown to the player while picking (the surprise is the
     # hidden 0-100 ability ratings; the real per-game line is the clue). total / games.
@@ -81,29 +84,36 @@ def main():
     # --- pool grid: cross every franchise (team axis) with every season (year axis) ---
     roster_size = int(pool.get("roster_size", 10))
     min_roster = int(pool.get("min_roster", 8))
-    seasons_axis = [int(s) for s in pool.get("seasons", [])]
+    # `seasons: all` (or omitted) -> every season present in the filtered universe; an explicit
+    # list narrows it back down. The team axis is every CURRENT franchise present in the data.
+    seasons_cfg = pool.get("seasons", "all")
+    seasons_axis = (sorted(int(s) for s in scored["season"].unique())
+                    if seasons_cfg in ("all", None) else [int(s) for s in seasons_cfg])
     qualifying_ids = set(scored["id"])
 
     # membership tells us who actually suited up for (season, team); rate from the stint id.
+    # `franchise` folds relocated/renamed abbreviations into the current franchise (lineage).
     mem = membership.copy()
     mem["id"] = [pid(p, s, t) for p, s, t in zip(mem["player_id"], mem["season"], mem["team"])] \
         if team_split else [pid(p, s) for p, s in zip(mem["player_id"], mem["season"])]
     mem = mem[mem["id"].isin(qualifying_ids)]
+    mem["franchise"] = mem["team"].map(cur)
 
     rosters, pool_player_ids, used_franchises, used_seasons = {}, set(), set(), set()
     thin = []
-    for team in franchises:
-        for season in seasons_axis:
-            rows = mem[(mem["season"] == season) & (mem["team"] == team)]
-            if len(rows) < min_roster:
-                if 0 < len(rows) < min_roster:
-                    thin.append(f"{season} {team} ({len(rows)})")
-                continue
-            roster = rows.sort_values("mp", ascending=False, kind="stable")["id"].head(roster_size).tolist()
-            rosters[f"{season}_{team}"] = roster
-            pool_player_ids.update(roster)
-            used_franchises.add(team)
-            used_seasons.add(season)
+    # iterate every (season, current-franchise) cell actually present in the data — full coverage
+    for (season, franchise), rows in mem.groupby(["season", "franchise"], sort=True):
+        if int(season) not in set(seasons_axis):
+            continue
+        if len(rows) < min_roster:
+            if 0 < len(rows) < min_roster:
+                thin.append(f"{int(season)} {franchise} ({len(rows)})")
+            continue
+        roster = rows.sort_values("mp", ascending=False, kind="stable")["id"].head(roster_size).tolist()
+        rosters[f"{int(season)}_{franchise}"] = roster
+        pool_player_ids.update(roster)
+        used_franchises.add(franchise)
+        used_seasons.add(int(season))
 
     # Ship only the players the pool can actually draft (the grid rosters) — the full
     # universe was needed for ranking (done in parquet), but the app/Monte Carlo only
