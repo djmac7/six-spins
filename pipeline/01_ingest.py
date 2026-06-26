@@ -130,6 +130,28 @@ def main():
         df = df.merge(acc, on=["season", "player_id"], how="left")
     df["def_accolade"] = pd.to_numeric(df.get("def_accolade"), errors="coerce").fillna(0.0)
 
+    # Smooth into a defensive-REPUTATION signal: recognition persists a few years, so a season inherits
+    # a decayed share of its recent peak (TRAILING window — no future leakage). Runs AFTER the merge so
+    # a player's vote-LESS seasons (Kidd 2011-13) are present to receive the decayed recognition — else
+    # a consistently-elite defender's rating bounces on single-season voting noise (Kidd 80<->93 across
+    # stable prime years). decay^gap weights the inherited value by how many seasons back it was.
+    sm = cfg.get("defensive_accolade", {}).get("smooth", {})
+    window, decay = int(sm.get("window", 0)), float(sm.get("decay", 0.6))
+    if window > 0 and (df["def_accolade"] > 0).any():
+        sa = (df.groupby(["player_id", "season"], as_index=False)["def_accolade"].max()
+                .sort_values(["player_id", "season"]))
+
+        def _smooth(g):
+            yrs, vals = g["season"].to_numpy(), g["def_accolade"].to_numpy()
+            g["_rep"] = [max([vals[j] * decay ** (yrs[i] - yrs[j])
+                              for j in range(len(yrs)) if 0 <= yrs[i] - yrs[j] <= window] or [0.0])
+                         for i in range(len(yrs))]
+            return g
+        sa = sa.groupby("player_id", group_keys=False).apply(_smooth)
+        rep = sa.set_index(["player_id", "season"])["_rep"]
+        df["def_accolade"] = [float(rep.get((p, s), 0.0))
+                              for p, s in zip(df["player_id"], df["season"])]
+
     # --- team membership for rosters: the per-team (non-aggregate) rows (§3) ---
     tm = totals[["season", "player_id", "team", "mp", "lg"]].copy()
     tm = tm[~is_agg_team(tm["team"])]

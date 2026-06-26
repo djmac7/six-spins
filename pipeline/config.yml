@@ -198,6 +198,9 @@ defensive_accolade:
   all_def_min_share: 0.10    # ignore trivial vote shares below this — a few stray votes (often for a
                              # steal-merchant like Rubio) would otherwise rank above the no-vote mass
   dpoy_share: 1.0            # multiplier on DPOY vote share (0-1) added on top
+  smooth:                    # defensive recognition is a REPUTATION that persists, not a one-season blip:
+    window: 2                # a season inherits recognition from up to N prior seasons (trailing; no future leak)
+    decay: 0.6               # per-season decay of inherited recognition (0.6 -> 36% two years on)
 
 # --- §7 rim accolade routing: the accolade is position-blind, so route its rim_protection credit to
 # INTERIOR defenders by defensive-rebound rate (NOT block rate — that would exclude no-swat anchors
