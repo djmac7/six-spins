@@ -13,6 +13,7 @@ import { ordinalSuffix } from '../ui/ordinal.js'
 // Play Again land above the fold — no scrolling to replay. High percentiles get confetti.
 const BEAT_MS = 430
 const PAUSE_MS = 750
+const COLLAPSE_MS = 1200 // let the fully-scored card + percentile breathe before folding it away
 
 export default function RevealScreen({ game, state, onDone, onPlayAgain }) {
   const total = state.result.total
@@ -31,10 +32,10 @@ export default function RevealScreen({ game, state, onDone, onPlayAgain }) {
   useEffect(() => {
     const timers = []
     for (let i = 1; i <= 6; i++) timers.push(setTimeout(() => setRevealCount(i), i * BEAT_MS))
-    timers.push(setTimeout(() => {
-      setShowPct(true)
-      setTeamOpen(false) // transition: fold the scored card away, bring the percentile + replay forward
-    }, 6 * BEAT_MS + PAUSE_MS))
+    // percentile slams with the full card still up (unchanged scoring feel); the card folds a
+    // beat later so the result + replay glide into focus rather than snapping at the tally.
+    timers.push(setTimeout(() => setShowPct(true), 6 * BEAT_MS + PAUSE_MS))
+    timers.push(setTimeout(() => setTeamOpen(false), 6 * BEAT_MS + PAUSE_MS + COLLAPSE_MS))
     return () => timers.forEach(clearTimeout)
   }, [])
 
@@ -56,9 +57,18 @@ export default function RevealScreen({ game, state, onDone, onPlayAgain }) {
       <div className={'reveal-team' + (teamOpen ? '' : ' collapsed')}>
         {showPct && (
           <button className="reveal-team__toggle" onClick={() => setTeamOpen((o) => !o)} aria-expanded={teamOpen}>
-            {teamOpen
-              ? <>Hide team <span className="reveal-team__chev">▲</span></>
-              : <>View your GOAT · <b>{total}</b>/{ceiling} <span className="reveal-team__chev">▼</span></>}
+            {teamOpen ? (
+              <>
+                <span>Hide team</span>
+                <span className="reveal-team__chev" aria-hidden="true">▲</span>
+              </>
+            ) : (
+              <>
+                <span>View your GOAT</span>
+                <span className="reveal-team__score"><b>{total}</b><span className="reveal-team__slash">/</span>{ceiling}</span>
+                <span className="reveal-team__chev" aria-hidden="true">▼</span>
+              </>
+            )}
           </button>
         )}
         <div className="reveal-team__body">

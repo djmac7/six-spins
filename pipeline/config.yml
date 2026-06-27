@@ -62,9 +62,11 @@ weights:
                               # near average instead of bottoming out on a meaningless 3pt-volume penalty.
                               # mid_range is a MEASURED 10-16ft/16ft-3pt make-rate (1997+ shot-location data
                               # only) — NOT blanket 2P%, so rim-running dunkers get NO false shooting credit.
-    fg3_pct: 0.50             # x3p_percent + x3pa       (shrunk — primary: 3pt make rate)
+    fg3_pct: 0.43             # x3p_percent + x3pa       (shrunk — primary: 3pt make rate)
     ft_pct: 0.35             # ft_percent + fta         (shrunk — era-neutral shooting touch)
-    score3: 0.15              # 3 * x3p, TS%-gated       (SHOOTERS only: light 3pt volume floor)
+    score3: 0.22              # 3 * x3p, TS%-gated       (SHOOTERS: volume — a 38% year on 750 attempts
+                              # (deep range, heavy gravity — Curry 2022) beats a 38% spot-up on 200; the
+                              # box score can't see range/difficulty, so VOLUME stands in for it)
     mid_range: 0.15           # 10-16ft + 16ft-3pt FG%   (NON-shooters w/ real mid-range data only)
   scoring:                    # VOLUME-led, ERA-RELATIVE (ranked within season — see era_relative_ratings).
                               # PPG leads so a season's scoring leader rates elite in any era. Efficiency uses
@@ -232,6 +234,9 @@ curve:
   sd_by_rating:
     scoring: 22               # softer ONLY for scoring (~3.6% at 90+) so era-relative scoring
                               # leaders reliably clear 90 in any era
+    shooting: 20             # softer for shooting too: the elite-shooter field is genuinely deep, so the
+                              # tight curve made a great shooter's slightly-down % year crater (Curry's
+                              # career-worst 38% year fell to 79). 20 keeps elite scarce but less brutal.
 
 # --- §11 QA expectations: names that must surface near the top of each ability ---
 qa:

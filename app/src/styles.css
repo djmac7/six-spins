@@ -303,18 +303,25 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
    + Play Again sit above the fold. grid-rows 1fr->0fr animates the height without measuring it. */
 .reveal-team { display: flex; flex-direction: column; }
 .reveal-team__toggle {
-  align-self: center; display: inline-flex; align-items: center; gap: 7px; margin-bottom: 10px;
+  align-self: center; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px;
   background: var(--surface2); border: 1px solid var(--border-strong); border-radius: 999px;
-  padding: 7px 16px; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer;
+  padding: 8px 18px; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer;
   transition: background 0.15s ease;
 }
 .reveal-team__toggle:hover { background: var(--surface3); }
-.reveal-team__toggle b { color: var(--accent); }
-.reveal-team__chev { font-size: 9px; color: var(--muted); }
-.reveal-team__body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.38s cubic-bezier(0.2, 0.9, 0.3, 1); }
+.reveal-team__score { font-variant-numeric: tabular-nums; color: var(--muted); }
+.reveal-team__score b { color: var(--accent); font-weight: 900; }
+.reveal-team__slash { margin: 0 3px; color: var(--border-strong); }
+.reveal-team__chev { font-size: 13px; line-height: 1; color: var(--muted); }
+/* grid-rows 1fr->0fr animates the height; opacity dissolves the card so the percentile
+   below glides up smoothly instead of the content snapping out from under it. */
+.reveal-team__body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
 .reveal-team.collapsed .reveal-team__body { grid-template-rows: 0fr; }
-.reveal-team__body > div { overflow: hidden; min-height: 0; }
-@media (prefers-reduced-motion: reduce) { .reveal-team__body { transition: none; } }
+.reveal-team__body > div { overflow: hidden; min-height: 0; opacity: 1; transition: opacity 0.32s ease; }
+.reveal-team.collapsed .reveal-team__body > div { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-team__body, .reveal-team__body > div { transition: none; }
+}
 .reveal-head { text-align: center; font-weight: 800; letter-spacing: 0.12em; font-size: 13px; color: var(--muted); text-transform: uppercase; }
 .pct-slam { text-align: center; margin-top: 6px; animation: slam 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
 @keyframes slam { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
@@ -395,8 +402,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .result-actions { display: flex; flex-direction: column; gap: 8px; }
 
 /* ---------- avatar + logos ---------- */
-.avatar { border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--border); }
-.avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center 14%; }
+.avatar { position: relative; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--border); }
+.avatar__initials { line-height: 1; }
+/* headshot fades in over the initials once decoded — no pop or color-flash as images stream in */
+.avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 14%; opacity: 0; transition: opacity 0.35s ease; }
+.avatar img.is-loaded { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .avatar img { transition: none; } }
 .tlogo { object-fit: contain; }
 .tlogo-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: 900; flex: 0 0 auto; }
 .slot__fill .tlogo { width: 20px; height: 20px; flex: 0 0 auto; }
