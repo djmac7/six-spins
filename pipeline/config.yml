@@ -197,8 +197,11 @@ defensive_accolade:
   all_def_weight: 1.0        # multiplier on All-Defense VOTE SHARE (0-1) — continuous recognition that
                              # credits snubbed-but-voted-for defenders (OG, Klay's non-selection years),
                              # not just whether they made the team. Share encodes the tier on its own.
-  all_def_min_share: 0.10    # ignore trivial vote shares below this — a few stray votes (often for a
-                             # steal-merchant like Rubio) would otherwise rank above the no-vote mass
+  all_def_min_share: 0.02    # ignore trivial vote shares below this — a 1-2 voter blip (often a stray vote
+                             # for a steal-merchant like Rubio, ~0.005-0.015) would otherwise rank above the
+                             # no-vote mass. Kept low enough to credit a real handful of voters: a recognized
+                             # point-of-attack stopper (Dillon Brooks 2025, 0.035 = 7 voting pts) is genuine
+                             # recognition the box score can't see, not noise — a 0.10 cliff wrongly dropped it.
   dpoy_share: 1.0            # multiplier on DPOY vote share (0-1) added on top
   smooth:                    # defensive recognition is a REPUTATION that persists, not a one-season blip:
     window: 2                # a season inherits recognition from up to N prior seasons (trailing; no future leak)
