@@ -63,6 +63,25 @@ export const TIER_BLURB = {
   bust: 'Bust.',
 }
 
+// GOAT-tier flourish (you maxed the ladder). Pure hoops culture — jersey retirement, the
+// Springfield HoF, unanimous MVP, the Mount Rushmore / barbershop debates. One is drawn at
+// random per result so topping out feels like an event.
+export const GOAT_LINES = [
+  'jersey to the rafters 🐐',
+  'enshrined in Springfield 🐐',
+  'unanimous — debate over 🐐',
+  'Mount Rushmore made room 🐐',
+  'first ballot, no questions 🐐',
+  'put some respect on the name 🐐',
+  'the barbershop debate ends here 🐐',
+  'ring szn, every szn 🐐',
+  'no ceiling left to break 🐐',
+]
+
+export function randomGoatLine() {
+  return GOAT_LINES[Math.floor(Math.random() * GOAT_LINES.length)]
+}
+
 // One accent color per tier (drives the percentile slam + result-card edge/headline).
 export const TIER_COLOR = {
   goat: '#c89200',   // gold

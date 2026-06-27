@@ -1,4 +1,5 @@
-import { TIERS, TIER_COLOR, tierRange } from './helpers.js'
+import { useMemo } from 'react'
+import { TIERS, TIER_COLOR, tierRange, randomGoatLine } from './helpers.js'
 
 // Gamified rank ladder: a row of stepped bars rising toward THE GOAT, lit up through the
 // player's current tier so they can see how close they are — and what's left to climb.
@@ -7,6 +8,8 @@ export default function TierMeter({ percentile, total, scoreForPercentile }) {
   // current tier = highest tier whose floor the percentile clears
   const curIdx = TIERS.findIndex((t) => percentile >= t.min) // index in best->worst
   const cur = TIERS[curIdx] ?? TIERS[TIERS.length - 1]
+  // pick the GOAT flourish once per result (stable across the reveal's re-renders)
+  const goatLine = useMemo(() => randomGoatLine(), [])
 
   // render worst -> best so the staircase rises to the right
   const steps = [...TIERS].reverse()
@@ -30,7 +33,7 @@ export default function TierMeter({ percentile, total, scoreForPercentile }) {
       <div className="tiermeter__caption">
         <span className="tiermeter__cur" style={{ color: TIER_COLOR[cur.key] }}>{cur.label}</span>
         {cur.key === 'goat' ? (
-          <span className="tiermeter__next">you are the ceiling 🐐</span>
+          <span className="tiermeter__next">{goatLine}</span>
         ) : (
           <span className="tiermeter__next">
             {scoreForPercentile ? Math.max(1, scoreForPercentile(TIERS[0].min) - Math.round(total)) : TIERS[0].min - percentile} pts to GOAT
