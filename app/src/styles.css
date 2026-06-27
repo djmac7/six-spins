@@ -315,9 +315,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .reveal-team__chev { font-size: 13px; line-height: 1; color: var(--muted); }
 /* grid-rows 1fr->0fr animates the height; opacity dissolves the card so the percentile
    below glides up smoothly instead of the content snapping out from under it. */
-.reveal-team__body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.reveal-team__body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .reveal-team.collapsed .reveal-team__body { grid-template-rows: 0fr; }
-.reveal-team__body > div { overflow: hidden; min-height: 0; opacity: 1; transition: opacity 0.32s ease; }
+.reveal-team__body > div { overflow: hidden; min-height: 0; opacity: 1; transition: opacity 0.2s ease; }
 .reveal-team.collapsed .reveal-team__body > div { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .reveal-team__body, .reveal-team__body > div { transition: none; }

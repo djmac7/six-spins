@@ -11,8 +11,8 @@ import { ordinalSuffix } from '../ui/ordinal.js'
 // hard pause, then SLAM the percentile as the climax with the ceiling as context.
 // Once scored, the GOAT card collapses (toggleable) so the percentile + a prominent
 // Play Again land above the fold — no scrolling to replay. High percentiles get confetti.
-const BEAT_MS = 430
-const PAUSE_MS = 750
+const BEAT_MS = 320
+const PAUSE_MS = 380
 
 export default function RevealScreen({ game, state, onDone, onPlayAgain }) {
   const total = state.result.total
