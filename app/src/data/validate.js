@@ -43,7 +43,7 @@ export function validateGameData(data) {
   }
 
   if (!data.ceiling || typeof data.ceiling.total !== 'number') {
-    warns.push('ceiling.total absent — will derive from per-ability maxima')
+    warns.push('ceiling.total absent, will derive from per-ability maxima')
   }
 
   return { errors, warns }

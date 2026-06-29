@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { TIERS, TIER_COLOR, tierRange, randomGoatLine } from './helpers.js'
+import { TIERS, tierRange, randomGoatLine } from './helpers.js'
 
 // Gamified rank ladder: a row of stepped bars rising toward THE GOAT, lit up through the
 // player's current tier so they can see how close they are — and what's left to climb.
@@ -23,15 +23,15 @@ export default function TierMeter({ percentile, total, scoreForPercentile }) {
           return (
             <div
               key={t.key}
-              className={'tiermeter__step' + (achieved ? ' on' : '') + (i === curStep ? ' cur' : '')}
-              style={{ '--c': TIER_COLOR[t.key], height: 10 + i * 4 }}
+              className={'tiermeter__step tc-' + t.key + (achieved ? ' on' : '') + (i === curStep ? ' cur' : '')}
+              style={{ '--c': 'var(--tier-color)', height: 10 + i * 4 }}
               title={`${t.label} · ${tierRange(t)}`}
             />
           )
         })}
       </div>
       <div className="tiermeter__caption">
-        <span className="tiermeter__cur" style={{ color: TIER_COLOR[cur.key] }}>{cur.label}</span>
+        <span className={'tiermeter__cur tc-' + cur.key}>{cur.label}</span>
         {cur.key === 'goat' ? (
           <span className="tiermeter__next">{goatLine}</span>
         ) : (

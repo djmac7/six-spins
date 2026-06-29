@@ -1,6 +1,7 @@
 import { ABILITIES } from '../constants.js'
 import TeamLogo from './TeamLogo.jsx'
 import Avatar from './Avatar.jsx'
+import AbilityIcon from './AbilityIcon.jsx'
 import { playerPhotoUrl } from './assets.js'
 import { ratingTier, teamDisplay } from './helpers.js'
 
@@ -26,15 +27,16 @@ export default function GoatCard({ slots, game, runningTotal, lastLockKey, revea
               className={'slot' + (filled ? ' filled' : ' open') + (justLocked ? ' just-locked' : '') + (shown ? ' shown' : '')}
               style={filled ? { '--team': color } : undefined}
             >
+              <AbilityIcon ability={slot.ability} size={16} className="slot__leadicon" />
               <span className="slot__label">{meta.label}</span>
               {filled ? (
                 <div className="slot__fill">
                   <Avatar name={player?.name} src={playerPhotoUrl(player)} color={color} size={30} rounded={6} />
                   <span className="slot__who">
-                    <span className="slot__name">{player?.name || '—'}</span>
+                    <span className="slot__name">{player?.name || '-'}</span>
                     <span className="slot__team">{team?.label || ''}</span>
                   </span>
-                  {slot.franchise && <TeamLogo franchise={slot.franchise} color={color} size={20} badge={false} />}
+                  {slot.franchise && <TeamLogo franchise={team?.logoId} color={color} size={20} badge={false} />}
                   {shown && (
                     <span className={'slot__rating tier-' + ratingTier(slot.rating)}>{slot.rating}</span>
                   )}

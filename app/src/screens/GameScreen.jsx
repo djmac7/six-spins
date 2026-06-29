@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import GoatCard from '../ui/GoatCard.jsx'
 import TeamYearReel from '../ui/TeamYearReel.jsx'
 import RosterBoard from '../ui/RosterBoard.jsx'
@@ -6,24 +7,15 @@ import Avatar from '../ui/Avatar.jsx'
 import { playerPhotoUrl } from '../ui/assets.js'
 import { teamDisplay } from '../ui/helpers.js'
 
-// Small circular-arrow "reroll" glyph (inline SVG — no emoji).
-function RerollIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-      <path d="M21 3v6h-6" />
-    </svg>
-  )
-}
-
 // Drives the `spinning` and `roster` phases (App spec §4). Team and Year are independent:
 // the spin shows a Team reel + a Year reel; Reroll Team re-rolls only the franchise (same
 // year), Reroll Year only the season (same franchise). The two rerolls live top-right,
 // inline with the spin counter.
-export default function GameScreen({ game, state, actions, canRerollTeam, canRerollYear, currentRoster }) {
+export default function GameScreen({ game, state, actions, canRerollTeam, canRerollYear, currentRoster, hideStats }) {
   const team = teamDisplay(game, state.currentFranchise, state.currentSeason)
   const openAbilities = state.slots.filter((s) => s.status === 'open').map((s) => s.ability)
+  const teamTitle = state.rerollTeamUsed ? 'Team respin used (one per game)' : 'Respin the team (one per game)'
+  const yearTitle = state.rerollYearUsed ? 'Year respin used (one per game)' : 'Respin the year (one per game)'
   // mobile: collapse the "your GOAT" card to give the player list room (always shown on desktop)
   const [cardOpen, setCardOpen] = useState(false)
 
@@ -36,14 +28,17 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
             <span className="spin-counter__of">of 6</span>
           </div>
           <div className="reroll-group">
-            <button className="reroll-mini" disabled={!canRerollTeam} onClick={actions.rerollTeam}
-                    aria-label="Reroll Team" title={state.rerollTeamUsed ? 'Reroll Team (used)' : 'Reroll Team'}>
-              <RerollIcon /><span className="reroll-mini__label">Team</span>
-            </button>
-            <button className="reroll-mini" disabled={!canRerollYear} onClick={actions.rerollYear}
-                    aria-label="Reroll Year" title={state.rerollYearUsed ? 'Reroll Year (used)' : 'Reroll Year'}>
-              <RerollIcon /><span className="reroll-mini__label">Year</span>
-            </button>
+            {/* title lives on the wrapper so the tooltip still shows when the button is disabled */}
+            <span className="reroll-mini-wrap" title={teamTitle}>
+              <button className="reroll-mini" disabled={!canRerollTeam} onClick={actions.rerollTeam} aria-label="Respin team">
+                <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" /><span className="reroll-mini__label">Team</span>
+              </button>
+            </span>
+            <span className="reroll-mini-wrap" title={yearTitle}>
+              <button className="reroll-mini" disabled={!canRerollYear} onClick={actions.rerollYear} aria-label="Respin year">
+                <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" /><span className="reroll-mini__label">Year</span>
+              </button>
+            </span>
           </div>
         </div>
         <button
@@ -51,7 +46,7 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
           onClick={() => setCardOpen((o) => !o)}
           aria-expanded={cardOpen}
         >
-          <span className="goat-toggle__label">Your GOAT</span>
+          <span className="goat-toggle__label">Your Player</span>
           <span className="goat-toggle__faces">
             {state.slots.map((slot) => {
               const isFilled = slot.status === 'filled'
@@ -106,6 +101,7 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
             players={currentRoster}
             openAbilities={openAbilities}
             onAssign={actions.assign}
+            hideStats={hideStats}
           />
         )}
       </div>

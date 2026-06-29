@@ -3,7 +3,7 @@ import { playerPhotoUrl } from './assets.js'
 import { matchColor } from '../game/comp.js'
 import { STAT_LINE } from '../constants.js'
 
-const fmt1 = (v) => (v == null ? '—' : Number(v).toFixed(1))
+const fmt1 = (v) => (v == null ? '-' : Number(v).toFixed(1))
 
 // "Plays like X" comp card: the comp player's headshot + name/team, a color-coded % match,
 // and their per-game line. Shared by the reveal and the result card.

@@ -1,4 +1,4 @@
-# BUILD THE GOAT — Data & Scoring pipeline
+# Six Spins — Data & Scoring pipeline
 
 Offline tooling that turns bulk NBA season stats into the six 0–100 ratings the game
 runs on. It runs once, produces a static `data/goat-data.json`, and is never called at

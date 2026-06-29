@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sixspins.com/sitemap.xml

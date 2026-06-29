@@ -1,4 +1,4 @@
-# BUILD THE GOAT — web app
+# Six Spins — web app
 
 The playable front-end (App spec v1). A single-session, mobile-first React game: spin six
 random team-years, steal one ability rating from one player each spin, fill six slots, and
@@ -8,6 +8,29 @@ Visual inspiration: [82-0.com](https://www.82-0.com/).
 The app does **no** stat math. It reads pre-computed 0–100 ratings from `goat-data.json`,
 sums the six locked ratings, and looks the total up in `percentile-table.json`. All rating
 logic lives in the data workstream (`../pipeline`).
+
+## Game modes (virality layer)
+
+Every board is driven by a **seed**, so any run is reproducible and shareable as a link.
+A persistent `ModeBar` (top) switches between:
+
+- **Daily** — one puzzle a day, the *same six spins for everyone* (`seed = "daily-<date>"`).
+  The result is saved to `localStorage`; it can't be re-rolled, and it powers a 🔥 **streak**.
+  This is the Wordle scarcity loop (comparable scores, a reason to return).
+- **Unlimited** — play as many as you like; each gets a fresh random seed.
+- **Archive** — HoopGrids-style grid of past days, today first. Completed days show your
+  result and re-open to it; unplayed days are playable.
+
+Determinism is **path-independent**: draws are keyed by `(seed, spinNumber, purpose, cell)`
+rather than a sequential stream, so a player's optional rerolls never shift the cells anyone
+else is dealt, and a reroll from a given cell always yields the same alternate. See
+[`game/rng.js`](src/game/rng.js), [`game/daily.js`](src/game/daily.js),
+[`game/storage.js`](src/game/storage.js).
+
+**Share** is a Wordle-style text payload (`ui/share.js`): six tier-colored squares (the
+*shape* of your GOAT, players hidden) + percentile + tier + comp + a deep link
+(`?d=<date>` for daily, `?seed=<seed>` to reproduce an unlimited board). Primary CTA uses
+the Web Share API (native sheet on mobile, image attached), falling back to clipboard copy.
 
 ## Run
 

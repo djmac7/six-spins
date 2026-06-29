@@ -1,6 +1,7 @@
 // The six ability keys are FIXED and ORDERED (App spec §1). Defined ONCE here; never
 // hardcode an ability string inline. NOTE: the shipped goat-data.json uses `scoring`
 // (not the spec draft's `finishing`) — the app follows the real data file.
+// Per-attribute line-icons live in ui/AbilityIcon.jsx (real SVGs, keyed by `key`).
 export const ABILITIES = [
   { key: 'shooting',       label: 'Shooting',       short: 'SHOOT' },
   { key: 'scoring',        label: 'Scoring',        short: 'SCORE' },

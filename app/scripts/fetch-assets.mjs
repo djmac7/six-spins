@@ -43,6 +43,15 @@ const ESPN_CODE = {
   UTA: 'utah', WAS: 'wsh',
 }
 
+// Historical identities for relocated/renamed franchises (see src/data/franchiseEras.js).
+// Basketball-Reference serves per-season logos at a stable CDN path; we grab one canonical
+// (most recent) season per era. The dest id matches the era `id` so teamLogoUrl finds it.
+const SSREF = 'https://cdn.ssref.net/req/202506022/tlogo/bbr'
+const HISTORICAL = {
+  SEA: 'SEA-2008', NJN: 'NJN-2012', VAN: 'VAN-2001', WSB: 'WSB-1997',
+  KCK: 'KCK-1985', SDC: 'SDC-1984', CHH: 'CHH-2002', CHA: 'CHA-2014', NOH: 'NOH-2013',
+}
+
 mkdirSync(join(pub, 'img', 'teams'), { recursive: true })
 mkdirSync(join(pub, 'img', 'players'), { recursive: true })
 
@@ -54,6 +63,10 @@ for (const fr of data.pool.franchises) {
   const code = ESPN_CODE[fr.id]
   if (!code) continue
   tasks.push({ url: `https://a.espncdn.com/i/teamlogos/nba/500/${code}.png`, dest: join(pub, 'img', 'teams', `${fr.id}.png`), q: 90, maxDim: 128 })
+}
+// historical team logos (defunct/renamed identities, by bbref code)
+for (const [id, slug] of Object.entries(HISTORICAL)) {
+  tasks.push({ url: `${SSREF}/${slug}.png`, dest: join(pub, 'img', 'teams', `${id}.png`), q: 90, maxDim: 128 })
 }
 // player headshots (unique slugs; q80)
 const slugs = [...new Set(data.players.map((p) => p.player_id))]

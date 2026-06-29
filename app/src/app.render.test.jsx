@@ -49,8 +49,8 @@ describe('App render + interaction (real data via mocked fetch)', () => {
 
     await waitFor(() => expect(container.querySelector('.roster')).toBeTruthy())
     expect(container.querySelector('.goat-card')).toBeTruthy()
-    expect(screen.getByLabelText('Reroll Team')).toBeTruthy()
-    expect(screen.getByLabelText('Reroll Year')).toBeTruthy()
+    expect(screen.getByLabelText('Respin team')).toBeTruthy()
+    expect(screen.getByLabelText('Respin year')).toBeTruthy()
     expect(screen.getByText(/SPIN 1/)).toBeTruthy()
   })
 
@@ -60,7 +60,7 @@ describe('App render + interaction (real data via mocked fetch)', () => {
     landSpin(container)
     await waitFor(() => expect(container.querySelector('.roster')).toBeTruthy())
 
-    const yearBtn = screen.getByLabelText('Reroll Year')
+    const yearBtn = screen.getByLabelText('Respin year')
     if (!yearBtn.disabled) {
       fireEvent.click(yearBtn)
       await waitFor(() => expect(container.querySelector('.tyreel-strip')).toBeTruthy())
@@ -69,7 +69,7 @@ describe('App render + interaction (real data via mocked fetch)', () => {
       landSpin(container)
       await waitFor(() => expect(container.querySelector('.roster')).toBeTruthy())
       // the year reroll is now spent -> its button is disabled
-      expect(screen.getByLabelText('Reroll Year').disabled).toBe(true)
+      expect(screen.getByLabelText('Respin year').disabled).toBe(true)
     }
 
     const firstPlayer = container.querySelector('.pcard:not(.used)')
@@ -125,10 +125,11 @@ describe('Reveal + Result screens render without crashing', () => {
     vi.useRealTimers()
   })
 
-  it('ResultScreen renders the shareable card with all six rows', () => {
+  it('ResultScreen renders the shareable card with all six rows + Play Again as the main CTA', () => {
     const { container } = render(<ResultScreen game={game} state={finishedState()} onPlayAgain={() => {}} />)
     expect(container.querySelectorAll('.rrow')).toHaveLength(6)
-    expect(screen.getByText('Save image', { exact: false })).toBeTruthy()
     expect(screen.getByText('Play again')).toBeTruthy()
+    expect(container.querySelector('.result-actions .btn-primary').textContent).toContain('Play again')
+    expect(screen.getByText('Share results')).toBeTruthy()
   })
 })

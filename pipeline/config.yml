@@ -111,10 +111,13 @@ weights:
                               # interior anchor who doesn't swat (Bam Adebayo) was stuck ~70s on blk_pct alone.
                               # drb_pct adds the "ends the defensive possession" signal — it lifts true anchors
                               # (Bam, Gobert) and tempers one-dimensional shot-blockers who don't rebound (Bol).
-    blk_pct: 0.36             # blk_percent              (credibility-shrunk on MP)
-    dbpm: 0.21                # dbpm                     (credibility-shrunk on MP)
+    blk_pct: 0.40             # blk_percent              (credibility-shrunk on MP) — primary rim signal, weight raised
+    dbpm: 0.13                # dbpm                     (credibility-shrunk on MP) — TRIMMED from 0.21: dbpm is WHOLE-court,
+                              # so it double-counts perimeter defense (its own axis) and over-penalizes an elite shot-blocker
+                              # stuck on a poor TEAM defense (2018 Porzingis: 6.4 blk%, 2.4 bpg, but a neutral dbpm on a bad
+                              # Knicks D dragged his rim rating to 71). Weight shifted to the direct interior signals below.
     blk_total: 0.15           # blk (season total)      (ABSOLUTE volume)
-    drb_pct: 0.12             # drb_percent              (interior possession-ending; credibility-shrunk on MP)
+    drb_pct: 0.16             # drb_percent              (interior possession-ending; credibility-shrunk on MP) — raised from 0.12
     def_accolade: 0.16        # All-Defense + DPOY       (rebounding-gated to interior anchors — credits no-swat Bam)
   rebounding:                 # volume added (§5 override) so high-minute anchors aren't outranked by
                               # low-minute rate compilers (cf. shooting); trb% still the primary signal

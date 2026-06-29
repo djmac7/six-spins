@@ -1,4 +1,5 @@
 // Small presentation helpers shared across components.
+import { franchiseEra } from '../data/franchiseEras.js'
 
 export function initials(name) {
   if (!name) return '?'
@@ -44,11 +45,15 @@ export function percentileTier(p) {
 // franchisesById; falls back to the abbreviation + neutral color if unknown.
 export function teamDisplay(game, franchise, season) {
   const fr = game.franchisesById?.get(franchise)
-  const name = fr?.name || franchise || '—'
+  // Older seasons of a relocated/renamed franchise show their historical identity
+  // (a 1999 OKC cell is really the Seattle SuperSonics). See data/franchiseEras.js.
+  const era = franchiseEra(franchise, season)
+  const name = era?.name || fr?.name || franchise || '-'
   return {
-    id: franchise,
+    id: franchise, // canonical id — game logic keys off this, never the era
+    logoId: era?.id || franchise, // logo asset to render (historical when applicable)
     name,
-    color: fr?.color || '#2a2a36',
+    color: era?.color || fr?.color || '#2a2a36',
     label: season != null ? `${season} ${name}` : name,
   }
 }
@@ -69,7 +74,7 @@ export const TIER_BLURB = {
 export const GOAT_LINES = [
   'jersey to the rafters 🐐',
   'enshrined in Springfield 🐐',
-  'unanimous — debate over 🐐',
+  'unanimous, debate over 🐐',
   'Mount Rushmore made room 🐐',
   'first ballot, no questions 🐐',
   'put some respect on the name 🐐',
