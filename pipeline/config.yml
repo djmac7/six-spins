@@ -95,10 +95,13 @@ weights:
                               # elite PERIMETER defenders. The box score CAN'T see low-steal point-of-attack
                               # containment, so def_accolade (All-Defense/DPOY) supplies that missing signal —
                               # lifting stoppers (Bowen/Klay/Smart) and tempering high-steal gamblers (Rubio/AI).
-    stl_pct: 0.19             # stl_percent              (credibility-shrunk on MP)
-    dbpm: 0.26                # dbpm                     (credibility-shrunk on MP; block-rate-gated)
-    stl_total: 0.10           # stl (season total)      (ABSOLUTE volume — rewards durable on-ball defenders)
-    def_accolade: 0.45        # All-Defense + DPOY       (containment the box score misses; block-rate-gated to guards).
+    stl_pct: 0.10             # stl_percent              (credibility-shrunk on MP)
+    dbpm: 0.14                # dbpm                     (credibility-shrunk on MP; block-rate-gated)
+    stl_total: 0.06           # stl (season total)      (ABSOLUTE volume — rewards durable on-ball defenders)
+    def_accolade: 0.70        # All-Defense + DPOY       (containment the box score misses; block-rate-gated to guards).
+                              # Raised 0.45 -> 0.70 (paired with the de-saturated accolade rank below): the honor is
+                              # the only signal for low-event point-of-attack stoppers (White, Bowen), so it now LEADS
+                              # the box score — a First-Team selection outweighs gaudy-but-empty steal rates.
                               # NOTE residual limits: a player the box score rates NEGATIVE on defense every year
                               # (Klay, dbpm<0) can't be fully rescued by a modest honor weight, and a historic-steal
                               # season with no honor (Iverson 2001, 2.5 spg) still reads as elite — box-score irreducibles.
@@ -209,6 +212,12 @@ defensive_accolade:
   smooth:                    # defensive recognition is a REPUTATION that persists, not a one-season blip:
     window: 2                # a season inherits recognition from up to N prior seasons (trailing; no future leak)
     decay: 0.6               # per-season decay of inherited recognition (0.6 -> 36% two years on)
+  desaturate:                # §7 fix: a plain percentile_rank of def_accolade SATURATES — only ~13% of
+    enabled: true            # seasons are honored, so fringe votes (~95th) and First-Team (~99th) collapse into
+    zero_rank: 35            # the same top band and the honor can't lift a real stopper (Derrick White) over a
+    honored_floor: 70        # token-vote name. Instead: rank honored seasons AMONG THEMSELVES across
+                             # [honored_floor, 100] by magnitude; non-honored sit at the neutral `zero_rank`.
+                             # First-Team now separates from fringe; box-only defenders (Iverson) ride other comps.
 
 # --- §7 rim accolade routing: the accolade is position-blind, so route its rim_protection credit to
 # INTERIOR defenders by defensive-rebound rate (NOT block rate — that would exclude no-swat anchors

@@ -49,6 +49,31 @@ def _rim_accolade_gate(drb_pct: pd.Series, cfg: dict) -> pd.Series:
     return pd.Series(np.clip((d - lo) / (hi - lo), gmin, 1.0), index=drb_pct.index)
 
 
+def _accolade_rank(vals, cfg: dict) -> np.ndarray:
+    """De-saturated ranking for the def_accolade component (§7). A plain percentile_rank
+    saturates: only ~13% of seasons are honored at all, so every voted season — fringe or
+    First-Team — piles into the top ~5 points (a couple of votes ranks ~95th, unanimous DPOY
+    ~100th), and the honor can't separate a stopper like Derrick White from a token-vote name.
+    This ranks the HONORED seasons among THEMSELVES and spreads them across [honored_floor, 100]
+    by magnitude, while non-honored seasons sit at a neutral `zero_rank`. First-Team vs fringe
+    now genuinely separate; box-score-only defenders (high-steal, no honor — Iverson) keep their
+    rating from the other components and are only mildly affected by the lower neutral baseline."""
+    ds = (cfg.get("defensive_accolade") or {}).get("desaturate") or {}
+    if not ds.get("enabled", False):
+        return percentile_rank(vals)
+    zero_rank = float(ds.get("zero_rank", 35.0))
+    floor = float(ds.get("honored_floor", 60.0))
+    x = np.asarray(vals, dtype=float)
+    out = np.full(x.shape, np.nan)
+    finite = ~np.isnan(x)
+    out[finite] = zero_rank                       # non-honored (or gated-out) -> neutral baseline
+    pos = finite & (x > 0)
+    if pos.any():
+        pr = percentile_rank(x[pos])              # 0-100 among honored seasons only
+        out[pos] = floor + (100.0 - floor) * (pr / 100.0)
+    return out
+
+
 def component_values(df: pd.DataFrame, cfg: dict) -> dict:
     """Map each component key -> its prepared (already normalized/shrunk) raw value.
     Per-100 and as-is inputs are taken straight; percentages use the §6 shrunk cols;
@@ -211,7 +236,9 @@ def main():
             ranks = {name: percentile_rank_within(vals, df["season"])
                      for name, vals in comps[cat].items()}
         else:
-            ranks = {name: percentile_rank(vals) for name, vals in comps[cat].items()}
+            ranks = {name: (_accolade_rank(vals, cfg) if name == "def_accolade"
+                            else percentile_rank(vals))
+                     for name, vals in comps[cat].items()}
         rank_df = pd.DataFrame(ranks, index=df.index)
         for name in ranks:
             df[f"_rk_{cat}_{name}"] = rank_df[name]
