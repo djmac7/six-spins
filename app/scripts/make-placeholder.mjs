@@ -55,8 +55,8 @@ for (const fr of FRANCHISES) {
         : { ppg: ri(8, 30), rpg: ri(2, 7), apg: ri(2, 10), spg: ri(1, 2), bpg: ri(0, 1) }
       const stats1 = Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, v + Math.round(rnd() * 9) / 10]))
       players.push({
-        id, player_id: id, name: `${pick(FIRST)} ${pick(LAST)}`, season, ratings, stats: stats1,
-        photo: null, team: fr.id, team_label: `${season} ${fr.name}`,
+        id, player_id: id, name: `${pick(FIRST)} ${pick(LAST)}`, ratings, stats: stats1,
+        team_label: `${season} ${fr.name}`,
       })
       roster.push(id)
     }

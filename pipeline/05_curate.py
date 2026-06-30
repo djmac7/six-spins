@@ -117,7 +117,7 @@ def main():
 
     # Ship only the players the pool can actually draft (the grid rosters) — the full
     # universe was needed for ranking (done in parquet), but the app/Monte Carlo only
-    # index pool players. This shrinks goat-data.json ~7x (8MB -> ~1.2MB) for a fast load.
+    # index pool players.
     players = [p for p in players if p["id"] in pool_player_ids]
 
     franchises_out = [
@@ -133,6 +133,12 @@ def main():
     ceiling = {c: int(pool_rows[c].max()) for c in RATINGS}
     ceiling["total"] = int(sum(ceiling[c] for c in RATINGS))
 
+    # Drop fields the app never reads: the photo URL is derived from player_id, and
+    # season/franchise come from the grid (the cell key), so they're redundant per-player.
+    # `players` (still carrying photo) is reused for the asset manifest below.
+    SHIP_FIELDS = ("id", "player_id", "name", "ratings", "stats", "team_label")
+    players_out = [{k: p[k] for k in SHIP_FIELDS if k in p} for p in players]
+
     out = {
         "meta": {
             "source": cfg["source"],
@@ -145,7 +151,7 @@ def main():
                           "ft": cfg["shrink_K"]["ft"],
                           "fg2": cfg["shrink_K"]["fg2"]},
         },
-        "players": players,
+        "players": players_out,
         "pool": {
             "franchises": franchises_out,
             "seasons": seasons_out,
@@ -156,7 +162,8 @@ def main():
 
     out_path = repo_path(cfg["paths"]["out"])
     with open(out_path, "w") as f:
-        json.dump(out, f, indent=2, ensure_ascii=False)
+        # Minified (no indent): the prior indent=2 added ~2.7 MB of pure whitespace.
+        json.dump(out, f, separators=(",", ":"), ensure_ascii=False)
 
     manifest = {
         "players": sorted({p["photo"] for p in players if p["id"] in pool_player_ids}),
