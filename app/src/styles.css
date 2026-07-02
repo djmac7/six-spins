@@ -336,6 +336,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
 }
 .pcard:not(:disabled):active { transform: scale(0.99); }
+/* keyboard draft cursor: Tab/arrows focus a row — make the highlight unmistakable */
+.pcard:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow); }
 .pcard.used { opacity: 0.55; }
 /* blind draft (Hide player stats): no stats row is rendered, so drop the empty second grid
    row that otherwise left a row-gap of dead space below the avatar — the card collapses to a
@@ -364,6 +366,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .sheet__options { display: flex; flex-direction: column; gap: 8px; }
 .opt { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 9px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); cursor: pointer; font-family: inherit; }
 .opt:active { transform: scale(0.99); }
+.opt:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .opt__icon { font-size: 18px; }
 .opt__label { flex: 1; text-align: left; font-weight: 700; font-size: 15px; }
 .opt__go { font-size: 22px; color: var(--faint); font-weight: 700; }
