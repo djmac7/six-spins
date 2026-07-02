@@ -6,7 +6,7 @@ import { seedForDate, dayNumber, todayStr, isDateStr } from './game/daily.js'
 import { saveDaily, getDaily, getStats } from './game/storage.js'
 import { ratingSquares } from './ui/share.js'
 import { percentileTier } from './ui/helpers.js'
-import { DAILY_ENABLED } from './config.js'
+import { DAILY_ENABLED, PLAYERS_ENABLED } from './config.js'
 import ModeBar from './ui/ModeBar.jsx'
 import HowToPlay from './ui/HowToPlay.jsx'
 import SettingsModal from './ui/SettingsModal.jsx'
@@ -15,6 +15,7 @@ import GameScreen from './screens/GameScreen.jsx'
 import RevealScreen from './screens/RevealScreen.jsx'
 import ResultScreen from './screens/ResultScreen.jsx'
 import ArchiveScreen from './screens/ArchiveScreen.jsx'
+import BrowseScreen from './screens/BrowseScreen.jsx'
 
 // ---- session builders: a session fully describes one playable board ----
 function dailySession(date) {
@@ -94,10 +95,13 @@ function Shell({ game }) {
       daily: () => setNav(openDate(todayStr())),
       unlimited: () => setNav({ view: 'play', session: unlimitedSession() }),
       archive: () => setNav((n) => ({ view: 'archive', session: n.session })),
+      browse: () => setNav((n) => ({ view: 'browse', session: n.session })),
       playDate: (date) => setNav(openDate(date)),
     }),
     []
   )
+  // Leaving a full-screen detour (Archive/Browse) returns to the home board.
+  const goHome = DAILY_ENABLED ? goto.daily : goto.unlimited
 
   return (
     <div className="app-frame">
@@ -107,10 +111,13 @@ function Shell({ game }) {
         onDaily={goto.daily}
         onUnlimited={goto.unlimited}
         onArchive={goto.archive}
+        onBrowse={PLAYERS_ENABLED ? goto.browse : undefined}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
       {nav.view === 'archive' && <ArchiveScreen onPlayDate={goto.playDate} onClose={goto.daily} />}
+
+      {PLAYERS_ENABLED && nav.view === 'browse' && <BrowseScreen game={game} onClose={goHome} />}
 
       {nav.view === 'play' && <Game key={nav.session.seed} game={game} session={nav.session} nav={goto} hideStats={settings.hideStats} />}
 

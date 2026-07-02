@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, Users } from 'lucide-react'
 
 // Logo: the 6 + shuffle emoji (the one bit of emoji we keep — everything else is SVG icons).
 // Click = home (a fresh game).
@@ -19,11 +19,17 @@ function Logo({ as = 'div', onClick }) {
 // Slim persistent top bar. Background spans the full viewport width (full-bleed) while the
 // content stays aligned to the app frame. Daily parked -> minimal 82-0-style header; Daily on
 // -> adds a mode pill + a Daily / Unlimited / Archive menu.
-export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlimited, onArchive, onOpenSettings }) {
+export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlimited, onArchive, onBrowse, onOpenSettings }) {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const pick = (fn) => () => { close(); fn() }
 
+  const browseBtn = onBrowse && (
+    <button className="modebar__new" onClick={onBrowse} aria-label="Player browser">
+      <Users size={14} strokeWidth={2.2} aria-hidden="true" />
+      <span>Players</span>
+    </button>
+  )
   const settingsBtn = (
     <button className="modebar__new" onClick={onOpenSettings} aria-label="Settings">
       <SlidersHorizontal size={14} strokeWidth={2.2} aria-hidden="true" />
@@ -36,7 +42,10 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
       <header className="modebar">
         <div className="modebar__inner">
           <Logo as="button" onClick={onUnlimited} />
-          {settingsBtn}
+          <div className="modebar__right">
+            {browseBtn}
+            {settingsBtn}
+          </div>
         </div>
       </header>
     )
@@ -79,6 +88,12 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
                 <span className="mi__name">Archive</span>
                 <span className="mi__sub">Replay past days</span>
               </button>
+              {onBrowse && (
+                <button role="menuitem" onClick={pick(onBrowse)}>
+                  <span className="mi__name">Player Browser</span>
+                  <span className="mi__sub">Search the whole pool</span>
+                </button>
+              )}
             </div>
           </>
         )}
