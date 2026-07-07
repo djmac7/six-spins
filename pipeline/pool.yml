@@ -20,7 +20,8 @@
 # era — picking the Thunder and rerolling Year can land on the 1996 SuperSonics. Each season's
 # roster keeps its era-accurate label ("1996 SuperSonics") but is grouped under the current team.
 
-roster_size: 10           # players kept per (season, franchise) cell (main spec: 8-12)
+roster_size: 12           # players kept per pool cell (decade cells have deep candidate sets;
+                          # 12 keeps the recognizable names on e.g. the 90s Bulls)
 min_roster: 8             # a cell needs >= this many qualifying players to be playable
 
 # the year axis — `all` = every season in the filtered universe (era_min_season onward).
@@ -30,6 +31,30 @@ seasons: all
 # relocated/renamed -> current franchise. The team AXIS dedupes to the current abbreviation;
 # rosters from the old abbreviation are grouped under it (era-accurate labels are preserved).
 franchise_lineage:
+  # --- pre-1980 relocations/renames (all-era pool) ---
+  MNL: LAL                 # Minneapolis Lakers   -> Los Angeles Lakers
+  PHW: GSW                 # Philadelphia Warriors -> Golden State Warriors
+  SFW: GSW                 # San Francisco Warriors -> Golden State Warriors
+  SYR: PHI                 # Syracuse Nationals   -> Philadelphia 76ers
+  FTW: DET                 # Fort Wayne Pistons   -> Detroit Pistons
+  ROC: SAC                 # Rochester Royals     -> Sacramento Kings
+  CIN: SAC                 # Cincinnati Royals    -> Sacramento Kings
+  KCO: SAC                 # Kansas City-Omaha Kings -> Sacramento Kings
+  TRI: ATL                 # Tri-Cities Blackhawks -> Atlanta Hawks
+  MLH: ATL                 # Milwaukee Hawks      -> Atlanta Hawks
+  STL: ATL                 # St. Louis Hawks      -> Atlanta Hawks
+  BAL: WAS                 # Baltimore Bullets    -> Washington Wizards
+  CAP: WAS                 # Capital Bullets      -> Washington Wizards
+  CHP: WAS                 # Chicago Packers      -> Washington Wizards
+  CHZ: WAS                 # Chicago Zephyrs      -> Washington Wizards
+  BUF: LAC                 # Buffalo Braves       -> Los Angeles Clippers
+  SDR: HOU                 # San Diego Rockets    -> Houston Rockets
+  NOJ: UTA                 # New Orleans Jazz     -> Utah Jazz
+  NYN: BRK                 # New York Nets        -> Brooklyn Nets
+  # (defunct one-off BAA/early-NBA franchises with no successor — Stags, Bombers,
+  #  Huskies, Capitols, original Baltimore Bullets, ... — are simply absent here AND
+  #  from `franchises` below, so 05_curate drops their cells from the team axis.)
+  # --- modern relocations/renames ---
   SEA: OKC                 # Seattle SuperSonics  -> Oklahoma City Thunder
   WSB: WAS                 # Washington Bullets   -> Washington Wizards
   NJN: BRK                 # New Jersey Nets      -> Brooklyn Nets
@@ -85,3 +110,23 @@ franchises:
   VAN: { name: "Grizzlies",    color: "#00B2A9" }
   WAS: { name: "Wizards",      color: "#002B5C" }
   WSB: { name: "Bullets",      color: "#C8102E" }
+  # --- pre-1980 historical identities (era-accurate labels for decade cells) ---
+  MNL: { name: "Lakers",       color: "#0C2C56" }
+  PHW: { name: "Warriors",     color: "#1D428A" }
+  SFW: { name: "Warriors",     color: "#FFC72C" }
+  SYR: { name: "Nationals",    color: "#D50032" }
+  FTW: { name: "Pistons",      color: "#C8102E" }
+  ROC: { name: "Royals",       color: "#1D428A" }
+  CIN: { name: "Royals",       color: "#1D428A" }
+  KCO: { name: "Kings",        color: "#5A2D81" }
+  TRI: { name: "Blackhawks",   color: "#00653A" }
+  MLH: { name: "Hawks",        color: "#E03A3E" }
+  STL: { name: "Hawks",        color: "#E03A3E" }
+  BAL: { name: "Bullets",      color: "#F58426" }
+  CAP: { name: "Bullets",      color: "#C8102E" }
+  CHP: { name: "Packers",      color: "#1D428A" }
+  CHZ: { name: "Zephyrs",      color: "#1D428A" }
+  BUF: { name: "Braves",       color: "#F58426" }
+  SDR: { name: "Rockets",      color: "#00653A" }
+  NOJ: { name: "Jazz",         color: "#5A2D81" }
+  NYN: { name: "Nets",         color: "#C8102E" }

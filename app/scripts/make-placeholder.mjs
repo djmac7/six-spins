@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const destDir = join(here, '..', 'public', 'data')
 mkdirSync(destDir, { recursive: true })
 
-const ABILITIES = ['shooting', 'scoring', 'playmaking', 'perimeter_d', 'rim_protection', 'rebounding']
+const ABILITIES = ['shooting', 'scoring', 'playmaking', 'defense', 'rebounding', 'clutch']
 
 let seed = 1337
 const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 0xffffffff
@@ -30,9 +30,9 @@ const SEASONS = [1991, 1996, 2004, 2013, 2016, 2023]
 const FIRST = ['Marcus', 'Andre', 'Tyrese', 'Devin', 'Jalen', 'Kobe', 'Reggie', 'Dax', 'Quinn', 'Theo', 'Malik', 'Zion']
 const LAST = ['Carter', 'Brooks', 'Holiday', 'Vega', 'Sloan', 'Reed', 'Park', 'Nash', 'Okafor', 'Bell', 'Frost', 'Ames']
 const ARCHETYPES = {
-  guard: { shooting: [55, 95], scoring: [50, 92], playmaking: [60, 98], perimeter_d: [45, 90], rim_protection: [10, 40], rebounding: [20, 55] },
-  wing: { shooting: [50, 92], scoring: [55, 95], playmaking: [40, 80], perimeter_d: [55, 95], rim_protection: [20, 55], rebounding: [40, 75] },
-  big: { shooting: [15, 60], scoring: [45, 88], playmaking: [20, 60], perimeter_d: [25, 60], rim_protection: [60, 99], rebounding: [65, 99] },
+  guard: { shooting: [55, 95], scoring: [50, 92], playmaking: [60, 98], defense: [45, 90], rebounding: [20, 55], clutch: [40, 90] },
+  wing: { shooting: [50, 92], scoring: [55, 95], playmaking: [40, 80], defense: [55, 95], rebounding: [40, 75], clutch: [45, 92] },
+  big: { shooting: [15, 60], scoring: [45, 88], playmaking: [20, 60], defense: [40, 95], rebounding: [65, 99], clutch: [40, 88] },
 }
 
 const players = []
@@ -86,6 +86,12 @@ for (let s = lo; s <= ceiling.total; s++) {
   const x = (s - lo) / (ceiling.total - lo)
   table.push([s, Math.round(100 * Math.min(1, Math.pow(x, 1.6)) * 100) / 100])
 }
-writeFileSync(join(destDir, 'percentile-table.placeholder.json'), JSON.stringify({ min: lo, max: ceiling.total, table }))
+// letter-grade cutoffs spread across the top of the range (schema mirrors the real table)
+const c = ceiling.total
+const grades = [
+  ['S', Math.round(c * 0.985)], ['A', Math.round(c * 0.965)], ['B', Math.round(c * 0.94)],
+  ['C', Math.round(c * 0.90)], ['D', Math.round(c * 0.85)], ['F', lo],
+]
+writeFileSync(join(destDir, 'percentile-table.placeholder.json'), JSON.stringify({ min: lo, max: ceiling.total, table, grades }))
 
 console.log(`[make-placeholder] ${players.length} players, ${FRANCHISES.length}x${SEASONS.length} grid (${Object.keys(rosters).length} cells), ceiling ${ceiling.total}`)

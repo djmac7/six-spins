@@ -21,7 +21,9 @@ export function useGame(game, dealer) {
     (spinNumber) => {
       const key = game.cellList[deal.index(game.cellList.length, spinNumber, 'cell')]
       const i = key.indexOf('_')
-      return { season: Number(key.slice(0, i)), franchise: key.slice(i + 1) }
+      // the time-axis token is OPAQUE (an int season "1996" or a decade label "1990s"
+      // depending on the data's pool_grain) — kept as the string from the cell key.
+      return { season: key.slice(0, i), franchise: key.slice(i + 1) }
     },
     [deal, game.cellList]
   )

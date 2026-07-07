@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pandas as pd
 from common import (
     load_config, read_table, work_path, collapse_to_season, keep_team_stints,
-    is_agg_team,
+    is_agg_team, smooth_reputation, repo_path,
 )
 
 
@@ -135,22 +135,113 @@ def main():
     # a player's vote-LESS seasons (Kidd 2011-13) are present to receive the decayed recognition — else
     # a consistently-elite defender's rating bounces on single-season voting noise (Kidd 80<->93 across
     # stable prime years). decay^gap weights the inherited value by how many seasons back it was.
-    sm = cfg.get("defensive_accolade", {}).get("smooth", {})
-    window, decay = int(sm.get("window", 0)), float(sm.get("decay", 0.6))
-    if window > 0 and (df["def_accolade"] > 0).any():
-        sa = (df.groupby(["player_id", "season"], as_index=False)["def_accolade"].max()
-                .sort_values(["player_id", "season"]))
+    # Pre-1969 defense (before All-Defense voting existed) has NO recorded honor signal, so
+    # famous defensive anchors would sit at the same neutral baseline as everyone else.
+    # `data/curated/retro_defense.csv` lifts a short, recorded-basis list (Russell, Thurmond,
+    # Wilt, ...) — each row cites the recorded fact it encodes (Anniversary Teams, All-D
+    # selections once voting began). Deterministic (checked-in data), explicitly editorial;
+    # switch off via defensive_accolade.retro_curated.
+    if acc_cfg.get("retro_curated", True):
+        retro = pd.read_csv(repo_path("data", "curated", "retro_defense.csv"))
+        r_share = {}
+        for _, rr in retro.iterrows():
+            for s in range(int(rr["from_season"]), int(rr["to_season"]) + 1):
+                r_share[(rr["player_id"], s)] = max(r_share.get((rr["player_id"], s), 0.0),
+                                                    float(rr["share"]))
+        if r_share:
+            retro_vals = pd.Series([r_share.get((p, s), 0.0)
+                                    for p, s in zip(df["player_id"], df["season"])],
+                                   index=df.index)
+            df["def_accolade"] = df["def_accolade"].where(df["def_accolade"] >= retro_vals,
+                                                          retro_vals)
 
-        def _smooth(g):
-            yrs, vals = g["season"].to_numpy(), g["def_accolade"].to_numpy()
-            g["_rep"] = [max([vals[j] * decay ** (yrs[i] - yrs[j])
-                              for j in range(len(yrs)) if 0 <= yrs[i] - yrs[j] <= window] or [0.0])
-                         for i in range(len(yrs))]
-            return g
-        sa = sa.groupby("player_id", group_keys=False).apply(_smooth)
-        rep = sa.set_index(["player_id", "season"])["_rep"]
-        df["def_accolade"] = [float(rep.get((p, s), 0.0))
-                              for p, s in zip(df["player_id"], df["season"])]
+    sm = cfg.get("defensive_accolade", {}).get("smooth", {})
+    df["def_accolade"] = smooth_reputation(df, "def_accolade",
+                                           int(sm.get("window", 0)), float(sm.get("decay", 0.6)))
+
+    # --- offensive-accolade "sentiment" signals (§7 extension): recorded vote shares that
+    # encode how the league/media actually PERCEIVED a season — the casual-sentiment signal
+    # box scores miss (a signature-skill legend should never read jarringly low). Fully
+    # deterministic (recorded voting data), same pattern as def_accolade. ---
+    oa = cfg.get("offensive_accolade", {})
+    if oa.get("enabled"):
+        shares = read_table(cfg, "Player Award Shares.csv",
+                            ["season", "award", "player_id", "share"])
+        mvp = shares[shares["award"] == "nba mvp"].copy()
+        mvp["_mvp"] = pd.to_numeric(mvp["share"], errors="coerce").fillna(0.0)
+        mvp_acc = mvp.groupby(["season", "player_id"])["_mvp"].max()
+
+        votes = read_table(cfg, "End of Season Teams (Voting).csv",
+                           ["season", "lg", "type", "player_id", "share"])
+        allnba = votes[(votes["type"] == "all_nba")
+                       & (votes["lg"].astype("string").str.lower() == "nba")].copy()
+        allnba["_an"] = pd.to_numeric(allnba["share"], errors="coerce").fillna(0.0)
+        min_share = float(oa.get("all_nba_min_share", 0.0))
+        allnba["_an"] = allnba["_an"].where(allnba["_an"] >= min_share, 0.0)
+        allnba_acc = allnba.groupby(["season", "player_id"])["_an"].max()
+
+        allstar = read_table(cfg, "All-Star Selections.csv", ["season", "lg", "player_id"])
+        allstar = allstar[allstar["lg"].astype("string").str.lower() == "nba"]
+        as_acc = allstar.groupby(["season", "player_id"]).size().clip(upper=1).astype(float)
+
+        # scoring-title bonus: that season's PPG leader within the ingested rows (deterministic;
+        # computed on qualifying-scale rows so a 3-game hot streak can't take the "title")
+        ppg = df.groupby(["season", "player_id"]).agg(pts=("pts", "sum"), g=("g", "sum"))
+        ppg = ppg[ppg["g"] >= 40]
+        ppg["_ppg"] = ppg["pts"] / ppg["g"]
+        leaders = ppg.groupby("season")["_ppg"].transform("max") == ppg["_ppg"]
+        title_acc = leaders[leaders].astype(float)  # (season, player_id) -> 1.0
+
+        acc = (pd.DataFrame({"_mvp": mvp_acc})
+               .join(pd.DataFrame({"_an": allnba_acc}), how="outer")
+               .join(pd.DataFrame({"_as": as_acc}), how="outer")
+               .join(pd.DataFrame({"_title": title_acc}), how="outer").fillna(0.0))
+        # scoring perception: MVP share + All-NBA share + the scoring title
+        acc["scoring_accolade"] = (acc["_mvp"] * float(oa.get("mvp_weight", 1.0))
+                                   + acc["_an"] * float(oa.get("all_nba_weight", 0.5))
+                                   + acc["_title"] * float(oa.get("scoring_title_weight", 0.5)))
+        # star perception (playmaking lift): MVP share + a small All-Star selection term
+        acc["star_accolade"] = (acc["_mvp"] * float(oa.get("mvp_weight", 1.0))
+                                + acc["_as"] * float(oa.get("all_star_weight", 0.25)))
+        acc = acc.reset_index()[["season", "player_id", "scoring_accolade", "star_accolade"]]
+        df = df.merge(acc, on=["season", "player_id"], how="left")
+    for col in ("scoring_accolade", "star_accolade"):
+        df[col] = pd.to_numeric(df.get(col), errors="coerce").fillna(0.0)
+        osm = oa.get("smooth", {}) if oa else {}
+        df[col] = smooth_reputation(df, col, int(osm.get("window", 0)),
+                                    float(osm.get("decay", 0.6)))
+
+    # --- clutch-accolade signal (§7): Finals MVP (curated recorded fact) + a small MVP
+    # echo + Clutch POY vote share (2023+). The playoff BOX-SCORE side of clutch is built
+    # by 01b_playoffs.py and merged in 04_score; this is the recognition side. ---
+    cl = cfg.get("clutch", {})
+    if cl.get("enabled"):
+        fmvp = pd.read_csv(repo_path("data", "curated", "finals_mvp.csv"))
+        fmvp["_f"] = pd.to_numeric(fmvp["share"], errors="coerce").fillna(0.0) \
+            * float(cl.get("finals_mvp_weight", 1.0))
+        f_acc = fmvp.groupby(["season", "player_id"])["_f"].max()
+
+        shares2 = read_table(cfg, "Player Award Shares.csv",
+                             ["season", "award", "player_id", "share"])
+        mvp2 = shares2[shares2["award"] == "nba mvp"].copy()
+        mvp2["_m"] = (pd.to_numeric(mvp2["share"], errors="coerce").fillna(0.0)
+                      * float(cl.get("mvp_weight", 0.25)))
+        m_acc = mvp2.groupby(["season", "player_id"])["_m"].max()
+        cpoy = shares2[shares2["award"] == "nba clutch_poy"].copy()
+        cpoy["_c"] = (pd.to_numeric(cpoy["share"], errors="coerce").fillna(0.0)
+                      * float(cl.get("clutch_poy_weight", 0.75)))
+        c_acc = cpoy.groupby(["season", "player_id"])["_c"].max()
+
+        cacc = (pd.DataFrame({"_f": f_acc})
+                .join(pd.DataFrame({"_m": m_acc}), how="outer")
+                .join(pd.DataFrame({"_c": c_acc}), how="outer").fillna(0.0))
+        cacc["clutch_accolade"] = cacc["_f"] + cacc["_m"] + cacc["_c"]
+        cacc = cacc.reset_index()[["season", "player_id", "clutch_accolade"]]
+        df = df.merge(cacc, on=["season", "player_id"], how="left")
+    df["clutch_accolade"] = pd.to_numeric(df.get("clutch_accolade"), errors="coerce").fillna(0.0)
+    csm = cl.get("smooth", {}) if cl else {}
+    df["clutch_accolade"] = smooth_reputation(df, "clutch_accolade",
+                                              int(csm.get("window", 0)), float(csm.get("decay", 0.7)))
 
     # --- team membership for rosters: the per-team (non-aggregate) rows (§3) ---
     tm = totals[["season", "player_id", "team", "mp", "lg"]].copy()

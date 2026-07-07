@@ -50,7 +50,7 @@ describe('App render + interaction (real data via mocked fetch)', () => {
     await waitFor(() => expect(container.querySelector('.roster')).toBeTruthy())
     expect(container.querySelector('.goat-card')).toBeTruthy()
     expect(screen.getByLabelText('Respin team')).toBeTruthy()
-    expect(screen.getByLabelText('Respin year')).toBeTruthy()
+    expect(screen.getByLabelText('Respin decade')).toBeTruthy()
     expect(screen.getByText(/SPIN 1/)).toBeTruthy()
   })
 
@@ -60,7 +60,7 @@ describe('App render + interaction (real data via mocked fetch)', () => {
     landSpin(container)
     await waitFor(() => expect(container.querySelector('.roster')).toBeTruthy())
 
-    const yearBtn = screen.getByLabelText('Respin year')
+    const yearBtn = screen.getByLabelText('Respin decade')
     if (!yearBtn.disabled) {
       fireEvent.click(yearBtn)
       await waitFor(() => expect(container.querySelector('.tyreel-strip')).toBeTruthy())
@@ -69,7 +69,7 @@ describe('App render + interaction (real data via mocked fetch)', () => {
       landSpin(container)
       await waitFor(() => expect(container.querySelector('.roster')).toBeTruthy())
       // the year reroll is now spent -> its button is disabled
-      expect(screen.getByLabelText('Respin year').disabled).toBe(true)
+      expect(screen.getByLabelText('Respin decade').disabled).toBe(true)
     }
 
     const firstPlayer = container.querySelector('.pcard:not(.used)')
@@ -107,17 +107,18 @@ describe('Reveal + Result screens render without crashing', () => {
     scoreForPercentile: () => 545,
   }
 
-  it('RevealScreen slams the percentile, collapses the team card, and surfaces Play Again', async () => {
+  it('RevealScreen slams the grade, collapses the team card, and surfaces Play Again', async () => {
     vi.useFakeTimers()
     const onPlayAgain = vi.fn()
     const { container } = render(<RevealScreen game={game} state={finishedState()} onDone={() => {}} onPlayAgain={onPlayAgain} />)
     // during the count-up the team card is open (no toggle yet)
     expect(container.querySelector('.reveal-team.collapsed')).toBeFalsy()
     expect(container.querySelector('.reveal-team__toggle')).toBeFalsy()
-    // at the tally: percentile slams and the card folds together (advance well past the count-up)
+    // at the tally: the grade slams and the card folds together (advance well past the count-up)
     await act(async () => { vi.advanceTimersByTime(4000) })
     expect(container.querySelector('.pct-slam')).toBeTruthy()
-    expect(screen.getByText('percentile')).toBeTruthy()
+    // OVR is the hero and the only headline (curved from total 435 -> 70)
+    expect(container.querySelector('.pct-slam__num').textContent).toBe('70')
     expect(container.querySelector('.reveal-team.collapsed')).toBeTruthy()
     // toggle re-opens the team card
     await act(async () => { container.querySelector('.reveal-team__toggle').click() })

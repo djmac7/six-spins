@@ -4,6 +4,7 @@ import ResultCard from '../ui/ResultCard.jsx'
 import ShareModal from '../ui/ShareModal.jsx'
 import { findComp } from '../game/comp.js'
 import { buildShareText, shareLink } from '../ui/share.js'
+import { computeOvr } from '../ui/helpers.js'
 import { nextDailyIn } from '../game/daily.js'
 
 // Used for the daily REVISIT path (a completed daily you re-open). Play Again is the main CTA;
@@ -13,7 +14,7 @@ export default function ResultScreen({
   onPlayAgain, onPlayUnlimited, onPlayDaily, onOpenArchive,
 }) {
   const total = state.result.total
-  const percentile = Math.round(game.getPercentile(total))
+  const ovr = computeOvr(total)
   const comp = useMemo(() => findComp(game.players, state.slots), [game.players, state.slots])
   const isDaily = mode === 'daily'
   const tag = session?.label || '82-0 inspired'
@@ -21,8 +22,8 @@ export default function ResultScreen({
 
   const meta = session && { mode: session.mode, date: session.date, dayNumber: session.dayNumber, seed: session.seed }
   const shareMessage = useMemo(
-    () => buildShareText({ percentile, total, ceiling: state.result.ceiling, slots: state.slots, comp, meta, url: '' }),
-    [percentile, total, state.result.ceiling, state.slots, comp, session]
+    () => buildShareText({ ovr, slots: state.slots, comp, meta, url: '' }),
+    [ovr, state.slots, comp, session]
   )
   const shareUrl = useMemo(() => shareLink(meta), [session])
 
@@ -32,7 +33,7 @@ export default function ResultScreen({
         {revisit && isDaily ? `Daily #${session.dayNumber} complete ✓` : 'Your player'}
       </div>
 
-      <ResultCard game={game} state={state} percentile={percentile} comp={comp} tag={tag} />
+      <ResultCard game={game} state={state} comp={comp} tag={tag} />
 
       {isDaily && stats && (
         <div className="daily-status">
@@ -58,7 +59,7 @@ export default function ResultScreen({
 
       {shareOpen && (
         <ShareModal
-          game={game} state={state} percentile={percentile} comp={comp} tag={tag}
+          game={game} state={state} comp={comp} tag={tag}
           message={shareMessage} url={shareUrl} total={total}
           onClose={() => setShareOpen(false)}
         />

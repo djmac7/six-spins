@@ -3,13 +3,13 @@ import TeamLogo from './TeamLogo.jsx'
 import Avatar from './Avatar.jsx'
 import AbilityIcon from './AbilityIcon.jsx'
 import { playerPhotoUrl } from './assets.js'
-import { ratingTier, teamDisplay } from './helpers.js'
+import { ratingTier, computeOvr, teamDisplay } from './helpers.js'
 
 // The GOAT card: six slots, ONE ability per row, in fixed order. During picking
-// (`hideRatings`) the 0-100 numbers and the running total stay hidden — a filled slot just
+// (`hideRatings`) the 0-99 numbers and the OVR stay hidden — a filled slot just
 // shows the drafted player; the scores are the surprise at the tally. `revealCount` (reveal
-// phase) counts the slots up one at a time.
-export default function GoatCard({ slots, game, runningTotal, lastLockKey, revealCount = null, compact = false, hideRatings = false, ceiling = null }) {
+// phase) counts the slots up one at a time; the OVR builds toward the final overall.
+export default function GoatCard({ slots, game, runningTotal, lastLockKey, revealCount = null, compact = false, hideRatings = false, hideTotal = false, ceiling = null }) {
   return (
     <div className={'goat-card' + (compact ? ' compact' : '')}>
       <div className="goat-card__slots">
@@ -36,7 +36,7 @@ export default function GoatCard({ slots, game, runningTotal, lastLockKey, revea
                     <span className="slot__name">{player?.name || '-'}</span>
                     <span className="slot__team">{team?.label || ''}</span>
                   </span>
-                  {slot.franchise && <TeamLogo franchise={team?.logoId} color={color} size={20} badge={false} />}
+                  {slot.franchise && <TeamLogo franchise={team?.logoId} fallback={team?.id} color={color} size={20} badge={false} />}
                   {shown && (
                     <span className={'slot__rating tier-' + ratingTier(slot.rating)}>{slot.rating}</span>
                   )}
@@ -49,11 +49,11 @@ export default function GoatCard({ slots, game, runningTotal, lastLockKey, revea
         })}
       </div>
 
-      {!hideRatings && (
+      {!hideRatings && !hideTotal && (
         <div className="goat-card__total">
-          <span className="goat-card__total-label">TOTAL</span>
-          <span className={'goat-card__total-value' + (ceiling != null ? ' tier-' + ratingTier(runningTotal / 6) : '')}>
-            {runningTotal}{ceiling != null && <span className="goat-card__total-ceil"> / {ceiling}</span>}
+          <span className="goat-card__total-label">OVERALL</span>
+          <span className={'goat-card__total-value tier-' + ratingTier(runningTotal / 6)}>
+            {computeOvr(runningTotal)}<span className="goat-card__total-ceil"> OVR</span>
           </span>
         </div>
       )}

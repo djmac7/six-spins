@@ -7,8 +7,7 @@ import TierMeter from '../ui/TierMeter.jsx'
 import ShareModal from '../ui/ShareModal.jsx'
 import { findComp } from '../game/comp.js'
 import { buildShareText, shareLink } from '../ui/share.js'
-import { percentileTier, TIER_BLURB, TIER_CELEBRATE } from '../ui/helpers.js'
-import { ordinalSuffix } from '../ui/ordinal.js'
+import { computeOvr, ovrColorClass, OVR_CELEBRATE } from '../ui/helpers.js'
 
 // Final reveal (App spec §5): assemble the card, COUNT UP the six ratings in sequence,
 // hard pause, then SLAM the percentile as the climax with the ceiling as context.
@@ -20,9 +19,9 @@ const PAUSE_MS = 380 // shorter hold before the percentile so the transition sta
 export default function RevealScreen({ game, state, mode = 'unlimited', session, onPlayAgain }) {
   const total = state.result.total
   const ceiling = state.result.ceiling
-  // round BEFORE picking the tier so the shown number and the accolade always agree
-  const percentile = Math.round(game.getPercentile(total))
-  const tier = percentileTier(percentile)
+  // 2K-style OVERALL rating (avg of the six attributes, capped 99) — the headline hook.
+  const ovr = computeOvr(total)
+  const colorClass = ovrColorClass(ovr) // color the OVR like an attribute of the same value
 
   const comp = useMemo(() => findComp(game.players, state.slots), [game.players, state.slots])
 
@@ -30,14 +29,15 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
   // the squares + percentile + comp; the deep link is shared separately.
   const meta = session && { mode: session.mode, date: session.date, dayNumber: session.dayNumber, seed: session.seed }
   const shareMessage = useMemo(
-    () => buildShareText({ percentile, total, ceiling, slots: state.slots, comp, meta, url: '' }),
-    [percentile, total, ceiling, state.slots, comp, session]
+    () => buildShareText({ ovr, slots: state.slots, comp, meta, url: '' }),
+    [ovr, state.slots, comp, session]
   )
   const shareUrl = useMemo(() => shareLink(meta), [session])
   const cardTag = session?.label || '82-0 inspired'
   const [shareOpen, setShareOpen] = useState(false)
 
   const [revealCount, setRevealCount] = useState(0)
+  // showPct kept as the name of the "reveal the result" flag (least churn); it now gates the grade slam
   const [showPct, setShowPct] = useState(false)
   const [teamOpen, setTeamOpen] = useState(true) // full card during the count-up; collapses at the slam
   const fired = useRef(false)
@@ -55,15 +55,15 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
   }, [])
 
   useEffect(() => {
-    if (showPct && !fired.current && TIER_CELEBRATE.has(tier)) {
+    if (showPct && !fired.current && ovr >= OVR_CELEBRATE) {
       fired.current = true
-      if (tier === 'goat') {
-        return fireGoatCelebration()
+      if (ovr >= 99) {
+        return fireGoatCelebration() // a perfect 99 (GOAT) gets the full gold spectacle
       }
-      const burst = tier === 'hof' ? 120 : 90
+      const burst = ovr >= 94 ? 120 : 90
       confetti({ particleCount: burst, spread: 80, origin: { y: 0.4 }, scalar: 1.1 })
     }
-  }, [showPct, tier])
+  }, [showPct, ovr])
 
   // Once scored: R = next game, S = open share. Ignore Cmd/Ctrl so reload/save still work.
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
   }, [showPct, onPlayAgain])
 
   return (
-    <div className={'screen reveal-screen tier-bg-' + tier}>
+    <div className="screen reveal-screen">
       {/* The scored GOAT card. After the tally it collapses to a toggle bar so the result
           (and Play Again) are immediately visible; the user can re-open it any time. */}
       <div className={'reveal-team' + (teamOpen ? '' : ' collapsed')}>
@@ -93,7 +93,6 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
             ) : (
               <>
                 <span>View your player</span>
-                <span className="reveal-team__score"><b>{total}</b><span className="reveal-team__slash">/</span>{ceiling}</span>
                 <span className="reveal-team__chev" aria-hidden="true">▼</span>
               </>
             )}
@@ -106,6 +105,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
               game={game}
               runningTotal={revealCount >= 6 ? total : sumShown(state.slots, revealCount)}
               revealCount={revealCount}
+              hideTotal={showPct}
               ceiling={ceiling}
             />
           </div>
@@ -113,14 +113,12 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
       </div>
 
       {showPct && (
-        <div className={'pct-slam tc-' + tier}>
-          {tier === 'goat' && <div className="pct-slam__emblem">👑 Greatest of All Time</div>}
-          <div className="pct-slam__big">
-            <span className="pct-slam__num">{percentile}</span>
-            <span className="pct-slam__ord">{ordinalSuffix(percentile)}</span>
+        <div className={'pct-slam grade-slam ' + colorClass}>
+          {/* the OVR is the hero — a single 2K-style overall, nothing else */}
+          <div className="pct-slam__ovr">
+            <span className="pct-slam__num">{ovr}</span>
+            <span className="pct-slam__ovrlabel">Overall</span>
           </div>
-          <div className="pct-slam__word">percentile</div>
-          <div className="pct-slam__blurb">{TIER_BLURB[tier]}</div>
 
           {/* Play Again is the main CTA, right under the score (above the fold). Share opens
               the 82-0-style modal. */}
@@ -133,14 +131,14 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
             </button>
           </div>
 
-          <TierMeter percentile={percentile} total={total} scoreForPercentile={game.scoreForPercentile} />
+          <TierMeter ovr={ovr} />
           <PlayerComp comp={comp} />
         </div>
       )}
 
       {shareOpen && (
         <ShareModal
-          game={game} state={state} percentile={percentile} comp={comp} tag={cardTag}
+          game={game} state={state} comp={comp} tag={cardTag}
           message={shareMessage} url={shareUrl} total={total}
           onClose={() => setShareOpen(false)}
         />

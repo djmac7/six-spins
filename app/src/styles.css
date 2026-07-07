@@ -22,12 +22,14 @@
   --frame: 460px;
   --bar-bg: rgba(255, 255, 255, 0.82); /* sticky top-bar backdrop */
 
-  /* rating tier ramp (shown only at the reveal/result) — readable on white */
-  --t-elite: #0b7a3b;
-  --t-great: #2f9e44;
-  --t-good: #1971c2;
-  --t-mid: #495057;
-  --t-low: #868e96;
+  /* rating tier ramp — GOLD reserved for GOAT, GREEN right below, then a full heat spectrum
+     down to red, so ratings AND the OVR span real color range. Readable on white. */
+  --t-goat: #c89200;  /* gold — GOAT (99 only) */
+  --t-elite: #2e7d32; /* green */
+  --t-great: #1565c0; /* blue */
+  --t-good: #7c3aed;  /* purple (kept well clear of gold) */
+  --t-mid: #e8590c;   /* vivid orange */
+  --t-low: #c0272d;   /* red */
 }
 
 /* ---------- dark theme (toggled in Settings) ---------- */
@@ -49,11 +51,12 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.55);
   --bar-bg: rgba(21, 23, 28, 0.82);
-  --t-elite: #34d399;
-  --t-great: #4ade80;
-  --t-good: #60a5fa;
-  --t-mid: #cbd5e1;
-  --t-low: #8a909c;
+  --t-goat: #e3b341;  /* gold — GOAT (99 only) */
+  --t-elite: #4ade80; /* green */
+  --t-great: #60a5fa; /* blue */
+  --t-good: #a78bfa;  /* purple (kept well clear of gold) */
+  --t-mid: #fb923c;   /* orange */
+  --t-low: #f87171;   /* red */
 }
 
 /* Accolade (tier) color, set via class so it stays readable on BOTH themes — the lower-tier
@@ -65,6 +68,13 @@
 .tc-role { --tier-color: #495057; }
 .tc-bench { --tier-color: #6f7072; }
 .tc-bust { --tier-color: #9aa0a6; }
+/* OVR colors reuse the ATTRIBUTE rating palette (--t-*, already theme-aware) so a big OVR
+   reads the same green/blue as the attribute chips on the card. */
+.tc-elite { --tier-color: var(--t-elite); }
+.tc-great { --tier-color: var(--t-great); }
+.tc-good  { --tier-color: var(--t-good); }
+.tc-mid   { --tier-color: var(--t-mid); }
+.tc-low   { --tier-color: var(--t-low); }
 [data-theme="dark"] .tc-goat { --tier-color: #e3b341; }
 [data-theme="dark"] .tc-hof { --tier-color: #a78bfa; }
 [data-theme="dark"] .tc-allnba { --tier-color: #fb923c; }
@@ -80,7 +90,7 @@
 [data-theme="dark"] .rrow__team { color: color-mix(in srgb, var(--team) 58%, #fff); }
 [data-theme="dark"] .rrow { border-left-color: color-mix(in srgb, var(--team) 60%, #fff); }
 [data-theme="dark"] .slot.filled::before { background: color-mix(in srgb, var(--team) 60%, #fff); }
-[data-theme="dark"] .comp__pct { color: color-mix(in srgb, var(--match) 66%, #fff); }
+[data-theme="dark"] .comp__pct { color: #fff; }
 
 [data-theme="light"] .tc-goat { --tier-color: #c89200; }
 [data-theme="light"] .tc-hof { --tier-color: #7c3aed; }
@@ -92,7 +102,7 @@
 [data-theme="light"] .rrow__team { color: var(--team); }
 [data-theme="light"] .rrow { border-left-color: var(--team); }
 [data-theme="light"] .slot.filled::before { background: var(--team); }
-[data-theme="light"] .comp__pct { color: var(--match, var(--text)); }
+[data-theme="light"] .comp__pct { color: var(--text); }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -278,6 +288,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .goat-card__total-ceil { font-size: 16px; font-weight: 700; color: var(--muted); }
 
 /* rating tier colors */
+.slot__rating.tier-goat, .rrow__rating.tier-goat, .goat-card__total-value.tier-goat { color: var(--t-goat); }
 .slot__rating.tier-elite, .rrow__rating.tier-elite, .goat-card__total-value.tier-elite { color: var(--t-elite); }
 .slot__rating.tier-great, .rrow__rating.tier-great, .goat-card__total-value.tier-great { color: var(--t-great); }
 .slot__rating.tier-good, .rrow__rating.tier-good, .goat-card__total-value.tier-good { color: var(--t-good); }
@@ -294,7 +305,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .tyreel-col.year { flex: 1; }
 .tyreel-strip { transition: transform 3.4s cubic-bezier(0.1, 0.6, 0.05, 1); will-change: transform; }
 .tyreel-strip.static { transition: none; }
-.tyreel__item { height: 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; gap: 6px; }
+.tyreel__item { height: 92px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; gap: 6px; overflow: hidden; }
 /* rich, glossy team tile: a faint top highlight down to a slightly deeper base — keeps the
    color saturated (no white-wash) so the reel reads like polished stacked cards */
 .tyreel__item.team {
@@ -306,7 +317,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* logo on a clean white chip so it pops on any team color (incl. same-hue logos) */
 .tyreel__logo-chip { width: 44px; height: 44px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; padding: 7px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22); }
 .tyreel__logo { width: 100%; height: 100%; object-fit: contain; }
-.tyreel__name { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18); }
+.tyreel__name { max-width: 100%; padding: 0 8px; text-align: center; font-size: 12px; font-weight: 800; letter-spacing: 0.02em; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tyreel__item.year { font-size: 36px; color: var(--text); background: var(--surface2); }
 
 /* ---------- header (spin counter + rerolls, top-right) ---------- */
@@ -390,7 +401,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .pcard--blind { grid-template-areas: "ava id"; align-items: center; }
 .pcard .avatar { grid-area: ava; }
 .pcard__id { grid-area: id; align-self: center; min-width: 0; }
-.pcard__name { font-weight: 800; font-size: 15px; line-height: 1.15; }
+.pcard__name { font-weight: 800; font-size: 15px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pcard__meta { font-size: 11px; color: var(--muted); font-weight: 600; }
 .pcard__stats { grid-area: stats; display: grid; grid-template-columns: repeat(5, 1fr); justify-items: center; border-top: 1px solid var(--border); padding: 8px 2px 2px; }
 .stat { display: flex; flex-direction: column; align-items: center; padding-left: 4px; width: 40px; }
@@ -405,8 +416,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .sheet { width: 100%; max-width: var(--frame); display: flex; flex-direction: column; background: var(--surface); border-bottom: 1px solid var(--border); border-radius: 0 0 18px 18px; padding: calc(12px + env(safe-area-inset-top)) 16px 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); animation: sheet-down 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 @keyframes sheet-down { from { transform: translateY(-100%); } to { transform: none; } }
 .sheet__head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.sheet__name { font-weight: 800; font-size: 18px; }
-.sheet__sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+.sheet__head-id { min-width: 0; flex: 1; }
+.sheet__name { font-weight: 800; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sheet__sub { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sheet__statline { display: grid; grid-template-columns: repeat(5, 1fr); justify-items: center; padding: 12px 6px; background: var(--surface2); border-radius: 8px; margin-bottom: 14px; }
 .sheet__prompt { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; margin: 0 2px 8px; }
 .sheet__options { display: flex; flex-direction: column; gap: 8px; }
@@ -455,13 +467,25 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .reveal-head { text-align: center; font-weight: 800; letter-spacing: 0.12em; font-size: 13px; color: var(--muted); text-transform: uppercase; }
 .pct-slam { text-align: center; margin-top: 6px; animation: slam 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
 @keyframes slam { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
-.pct-slam__context { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
-.pct-slam__context b { color: var(--text); font-weight: 800; }
-.pct-slam__big { display: flex; align-items: flex-start; justify-content: center; line-height: 0.9; }
-.pct-slam__num { font-size: 92px; font-weight: 900; color: var(--tier-color, var(--text)); }
-.pct-slam__ord { font-size: 28px; font-weight: 800; margin-top: 9px; color: var(--tier-color, var(--text)); }
-.pct-slam__word { font-size: 14px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: var(--muted); }
-.pct-slam__blurb { margin: 8px 0 16px; font-size: 22px; font-weight: 900; color: var(--tier-color, var(--text)); }
+/* the OVR is the hero of the slam — one big 2K-style number with a small OVERALL label
+   stacked beneath. Gold-shimmers at 96+ (tc-goat). */
+.pct-slam__ovr { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.pct-slam__num {
+  font-size: 140px; font-weight: 900; line-height: 1.04; letter-spacing: -0.05em;
+  padding: 0 6px; color: var(--tier-color, var(--text)); font-variant-numeric: tabular-nums;
+  text-shadow: 0 6px 22px color-mix(in srgb, var(--tier-color, #000) 22%, transparent);
+}
+.pct-slam__ovrlabel {
+  font-size: 15px; font-weight: 800; letter-spacing: 0.42em; text-transform: uppercase;
+  color: var(--muted); padding-left: 0.42em; /* optical-center the tracked caps */
+}
+/* the OVR tier (Superstar, All-Star…) as a colored badge — used on the shareable card */
+.pct-slam__gradebadge {
+  display: inline-block; margin-top: 12px; padding: 5px 20px; border-radius: 999px;
+  font-size: 22px; font-weight: 900; letter-spacing: 0.01em; color: #fff;
+  background: var(--tier-color, var(--text)); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+.pct-slam__blurb { margin: 10px 0 16px; font-size: 20px; font-weight: 900; color: var(--tier-color, var(--text)); }
 
 /* ----- GOAT-tier flourish (99th percentile only) ----- */
 /* gold emblem kicker above the number, pops in just after the slam */
@@ -473,9 +497,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   animation: emblem-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.05s both, gold-sheen 3s linear infinite;
 }
 @keyframes emblem-in { from { transform: scale(0.6) translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
-/* shimmer the big number + blurb in gold so the climax glints rather than sits flat */
+/* shimmer the big score + blurb in gold so the climax glints rather than sits flat */
 .pct-slam.tc-goat .pct-slam__num,
-.pct-slam.tc-goat .pct-slam__ord,
 .pct-slam.tc-goat .pct-slam__blurb {
   color: transparent; background-clip: text; -webkit-background-clip: text;
   /* solid, readable gold for most of the glyph; only a narrow bright band glints across */
@@ -490,12 +513,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   .pct-slam__emblem { animation: emblem-in 0.45s ease 0.05s both; }
   .pct-slam.tc-goat .pct-slam__num,
-  .pct-slam.tc-goat .pct-slam__ord,
   .pct-slam.tc-goat .pct-slam__blurb { animation: none; }
 }
-.pct-slam__actions { display: flex; flex-direction: column; gap: 8px; max-width: 300px; margin: 0 auto; }
-.pct-slam__actions-row { display: flex; gap: 8px; }
-.pct-slam__actions-row .btn-secondary { flex: 1 1 0; min-width: 0; padding: 12px 10px; font-size: 14px; }
+.pct-slam__actions { display: flex; flex-direction: column; gap: 8px; max-width: 300px; margin: 28px auto 0; }
 /* draw attention to Play again with a gentle pulse + glow ring */
 .pct-slam__actions .btn-primary { animation: cta-pulse 1.7s ease-in-out infinite; }
 @keyframes cta-pulse {
@@ -525,7 +545,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .comp__name { font-weight: 800; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .comp__team { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .comp__match { display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; padding-left: 4px; }
-.comp__pct { font-size: 23px; font-weight: 900; line-height: 1; color: var(--match, var(--text)); letter-spacing: -0.02em; }
+.comp__pct { font-size: 23px; font-weight: 800; line-height: 1; color: var(--text); letter-spacing: -0.02em; }
 .comp__pct-label { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 /* per-game stat line, matching the roster cards (shares .stat) */
 .comp__stats { display: grid; grid-template-columns: repeat(5, 1fr); justify-items: center; margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--border); }
@@ -541,13 +561,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .result-card__logo b { color: var(--accent); }
 .result-card__tag { font-size: 10px; color: var(--faint); letter-spacing: 0.08em; }
 .result-card__headline { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 8px; }
-.result-card__pct { font-size: 54px; font-weight: 900; line-height: 0.9; display: flex; align-items: baseline; gap: 2px; }
-.result-card__ord { font-size: 22px; }
-.result-card__pctword { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; margin-left: 4px; align-self: flex-end; margin-bottom: 6px; }
-.result-card__headline .result-card__pct { color: var(--tier-color, var(--text)); }
-.result-card__score { text-align: right; }
-.result-card__total { font-size: 36px; font-weight: 900; color: var(--text); }
-.result-card__ceil { font-size: 16px; color: var(--muted); margin-left: 4px; }
+/* score is the hero; letter grade is a colored badge on the right */
+.result-card__score { display: flex; align-items: baseline; gap: 4px; }
+.result-card__total { font-size: 64px; font-weight: 900; line-height: 0.82; letter-spacing: -0.03em; color: var(--tier-color, var(--text)); }
+.result-card__ceil { font-size: 20px; font-weight: 800; color: var(--muted); }
+.result-card__gradebadge {
+  padding: 3px 15px; border-radius: 999px; font-size: 22px; font-weight: 900; color: #fff;
+  background: var(--tier-color, var(--text));
+}
 .result-card__blurb { font-weight: 900; font-size: 17px; margin: 0 2px 12px; }
 
 .result-card__rows { display: flex; flex-direction: column; gap: 6px; }
@@ -650,6 +671,31 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .setting-row__label { font-size: 15px; font-weight: 700; color: var(--text); }
 .setting-row__desc { font-size: 12px; color: var(--muted); line-height: 1.35; }
 .settings .btn-primary { margin-top: 14px; }
+/* about & legal links */
+.settings__section {
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.setting-link {
+  width: 100%; text-align: left; background: none; border: 0; border-top: 0; cursor: pointer;
+  font-family: inherit; padding: 12px 0;
+}
+.setting-link + .setting-link { border-top: 1px solid var(--border); }
+.setting-link__chev { color: var(--muted); flex: 0 0 auto; }
+.setting-link:active { opacity: 0.6; }
+/* back button in the info header */
+.info-back {
+  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer; background: var(--surface2); border: 0; color: var(--muted);
+}
+/* long-form info doc (methodology / privacy / terms) */
+.info-modal { max-height: 82vh; display: flex; flex-direction: column; }
+.info-doc { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 4px; }
+.info-doc p { font-size: 14px; line-height: 1.55; color: var(--text); margin: 0 0 12px; }
+.info-doc h3 { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; margin: 16px 0 6px; color: var(--text); }
+.info-doc ul { margin: 0 0 12px; padding-left: 18px; }
+.info-doc li { font-size: 14px; line-height: 1.5; color: var(--text); margin-bottom: 6px; }
+.info-doc b { font-weight: 800; }
 /* segmented (light/dark) */
 .segmented { display: inline-flex; flex: 0 0 auto; background: var(--surface2); border-radius: 9px; padding: 3px; gap: 2px; }
 .seg {
@@ -756,7 +802,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   background: none; border: 0; padding: 0;
 }
 .modebar__brand--btn { cursor: pointer; }
-.modebar__logo { font-size: 20px; line-height: 1; letter-spacing: -0.06em; }
+.modebar__logo { font-size: 20px; line-height: 1; letter-spacing: -0.06em; display: inline-block; transform-origin: center; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+/* easter egg: hover the logo and it grows a touch and spins */
+.modebar__brand:hover .modebar__logo { transform: scale(1.25) rotate(360deg); }
 /* Restart: deliberately quiet — a muted text+icon affordance, not a glaring CTA */
 .modebar__new {
   display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-family: inherit;

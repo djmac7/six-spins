@@ -12,8 +12,8 @@ import sys, os, subprocess, hashlib, shutil
 
 PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
-STAGES = ["01_ingest.py", "02_filter.py", "03_normalize.py", "04_score.py",
-          "05_curate.py", "06_montecarlo.py"]
+STAGES = ["01_ingest.py", "01b_playoffs.py", "02_filter.py", "03_normalize.py",
+          "04_score.py", "05_curate.py", "06_montecarlo.py"]
 
 
 def run_stage(name):

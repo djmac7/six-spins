@@ -1,7 +1,6 @@
 import { archiveDates, dayNumber } from '../game/daily.js'
 import { getDaily, getStats } from '../game/storage.js'
-import { percentileTier, TIER_COLOR } from '../ui/helpers.js'
-import { ordinalSuffix } from '../ui/ordinal.js'
+import { computeOvr, ovrColor } from '../ui/helpers.js'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 function pretty(dateStr) {
@@ -11,7 +10,7 @@ function pretty(dateStr) {
 
 // Daily archive (HoopGrids-style): every past puzzle, today first. Completed days show your
 // result with the tier color; unplayed days invite a play. Tapping any day opens it.
-export default function ArchiveScreen({ onPlayDate, onClose }) {
+export default function ArchiveScreen({ game, onPlayDate, onClose }) {
   const dates = archiveDates()
   const stats = getStats()
 
@@ -30,12 +29,13 @@ export default function ArchiveScreen({ onPlayDate, onClose }) {
       <div className="archive-grid">
         {dates.map((d, i) => {
           const rec = getDaily(d)
-          const tier = rec ? percentileTier(rec.percentile) : null
+          // new records store `ovr`; old ones only have `total` — derive it
+          const ovr = rec ? (rec.ovr ?? computeOvr(rec.total)) : null
           return (
             <button
               key={d}
               className={'archive-cell' + (rec ? ' done' : '')}
-              style={rec ? { '--tier-color': TIER_COLOR[tier] } : undefined}
+              style={ovr != null ? { '--tier-color': ovrColor(ovr) } : undefined}
               onClick={() => onPlayDate(d)}
             >
               <span className="archive-cell__top">
@@ -44,8 +44,8 @@ export default function ArchiveScreen({ onPlayDate, onClose }) {
               </span>
               <span className="archive-cell__date">{pretty(d)}</span>
               {rec ? (
-                <span className="archive-cell__result">
-                  <b>{rec.percentile}</b>{ordinalSuffix(rec.percentile)}
+                <span className="archive-cell__result archive-cell__grade" style={{ color: ovrColor(ovr) }}>
+                  {ovr}
                 </span>
               ) : (
                 <span className="archive-cell__play">Play ▸</span>

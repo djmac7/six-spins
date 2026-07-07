@@ -6,35 +6,10 @@
 // SHAPE of your GOAT — strong where, weak where — WITHOUT revealing which players/team-years
 // you stole. That spoiler gap is the hook: "you went blue on defense? who'd you even get?!"
 import { ABILITIES } from '../constants.js'
-import { ratingTier, percentileTier } from './helpers.js'
-import { ordinalSuffix } from './ordinal.js'
+import { ratingTier, ovrTier } from './helpers.js'
 
-// rating tier -> heat square (warm = weak, cool = elite). Monotonic so the row reads at a glance.
-const TIER_SQUARE = { elite: '🟦', great: '🟩', good: '🟨', mid: '🟧', low: '🟥' }
-
-// The brag line (per percentile tier) — louder than the in-app blurb because a share has to
-// earn the tap. Carries the accolade emoji so the flex is legible at a glance in a feed.
-const SHARE_VERDICT = {
-  goat: 'I built the GOAT 🐐 debate over',
-  hof: 'first-ballot Hall of Famer 🏆',
-  allnba: 'All-NBA, no debate ⭐',
-  allstar: 'bona fide All-Star',
-  role: 'solid rotation piece',
-  bench: 'barely cracked the rotation',
-  bust: 'certified bust 💀',
-}
-
-// The hook (per tier) — a competitive dare is the share's job. Higher tiers taunt "top it",
-// lower tiers bait "you can do better". Either way it demands a reply, which is the click.
-const SHARE_CTA = {
-  goat: 'Your turn. Good luck topping it.',
-  hof: 'Think you can top it?',
-  allnba: 'Think you can top it?',
-  allstar: 'Your turn — can you beat it?',
-  role: 'Bet you can do better.',
-  bench: 'You can definitely beat this.',
-  bust: 'You literally cannot do worse — try.',
-}
+// rating tier -> heat square. GOAT gold(🟨), then green/blue/… down to red. Distinct per tier.
+const TIER_SQUARE = { goat: '🟨', elite: '🟩', great: '🟦', good: '🟪', mid: '🟧', low: '🟥' }
 
 export function ratingSquares(slots) {
   return ABILITIES.map((_, i) => TIER_SQUARE[ratingTier(slots[i]?.rating ?? 0)]).join('')
@@ -68,16 +43,16 @@ function shareTitle(meta) {
   return `SIX SPINS 🏀`
 }
 
-export function buildShareText({ percentile, total, ceiling, slots, comp, meta, url }) {
-  const tier = percentileTier(percentile)
+export function buildShareText({ ovr, slots, comp, meta, url }) {
+  const t = ovrTier(ovr)
   const link = url != null ? url : shareLink(meta)
   const lines = [
     shareTitle(meta),
-    `${percentile}${ordinalSuffix(percentile)} percentile · ${SHARE_VERDICT[tier]}`,
-    `${ratingSquares(slots)}  ${total}/${ceiling}`,
+    `${ovr} OVR — ${t.head}`,
+    `${ratingSquares(slots)}`,
   ]
   if (comp?.player) lines.push(`plays like ${comp.player.name} · ${comp.player.team_label}`)
-  lines.push(SHARE_CTA[tier])
+  lines.push(t.cta)
   if (link) lines.push(`▸ ${link}`)
   return lines.join('\n')
 }

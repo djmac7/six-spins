@@ -190,6 +190,20 @@ def bell_curve(percentile: np.ndarray, mean: float, sd: float, floor: float = 0.
     return out
 
 
+def game_curve(percentile: np.ndarray, mean: float, sd: float,
+               floor: float = 0.0, cap: float = 100.0) -> np.ndarray:
+    """2K-style rating scale for the playable (decade-grain) pool: same z-score mapping
+    as bell_curve but clipped to [floor, cap]. The decade pool is peaks of real NBA
+    rotation players, so its median maps to a 'solid NBA player' number (~75) rather
+    than 50, and `cap` keeps 100 unreachable. Monotonic — ordering is unchanged. NaN-safe."""
+    p = np.asarray(percentile, dtype=float)
+    out = np.full(p.shape, np.nan)
+    mask = ~np.isnan(p)
+    z = norm.ppf(np.clip(p[mask] / 100.0, 1e-6, 1.0 - 1e-6))
+    out[mask] = np.clip(mean + sd * z, floor, cap)
+    return out
+
+
 def percentile_rank_within(values: pd.Series | np.ndarray,
                            groups: pd.Series | np.ndarray) -> np.ndarray:
     """Era-relative percentile: rank each value only against its same-group (season)
@@ -231,6 +245,53 @@ def weighted_composite(rank_df: pd.DataFrame, weights: dict) -> np.ndarray:
     with np.errstate(invalid="ignore", divide="ignore"):
         comp = np.where(denom > 0, num / denom, np.nan)
     return comp
+
+
+def desaturated_rank(vals, ds: dict) -> np.ndarray:
+    """De-saturated ranking for sparse ACCOLADE components (§7). A plain percentile_rank
+    saturates: only a small fraction of seasons are honored at all, so every honored
+    season — fringe votes or First-Team — piles into the same top band and the honor
+    can't separate real recognition from a token vote. Instead the honored seasons are
+    ranked AMONG THEMSELVES and spread across [honored_floor, 100] by magnitude, while
+    non-honored seasons sit at a neutral `zero_rank` baseline.
+
+    ds keys: enabled (bool), zero_rank, honored_floor. Disabled -> plain percentile_rank."""
+    if not (ds or {}).get("enabled", False):
+        return percentile_rank(vals)
+    zero_rank = float(ds.get("zero_rank", 35.0))
+    floor = float(ds.get("honored_floor", 60.0))
+    x = np.asarray(vals, dtype=float)
+    out = np.full(x.shape, np.nan)
+    finite = ~np.isnan(x)
+    out[finite] = zero_rank                       # non-honored (or gated-out) -> neutral baseline
+    pos = finite & (x > 0)
+    if pos.any():
+        pr = percentile_rank(x[pos])              # 0-100 among honored seasons only
+        out[pos] = floor + (100.0 - floor) * (pr / 100.0)
+    return out
+
+
+def smooth_reputation(df: pd.DataFrame, col: str, window: int, decay: float) -> pd.Series:
+    """Turn a per-season accolade value into a REPUTATION signal: recognition persists a
+    few years, so a season inherits a decayed share of its recent peak (TRAILING window —
+    no future leakage). Prevents a consistently-recognized player's rating bouncing on
+    single-season voting noise. Expects df with player_id/season/col (any row grain);
+    returns the smoothed value aligned to df's rows."""
+    if window <= 0 or not (df[col] > 0).any():
+        return df[col]
+    sa = (df.groupby(["player_id", "season"], as_index=False)[col].max()
+            .sort_values(["player_id", "season"]))
+
+    def _smooth(g):
+        yrs, vals = g["season"].to_numpy(), g[col].to_numpy()
+        g["_rep"] = [max([vals[j] * decay ** (yrs[i] - yrs[j])
+                          for j in range(len(yrs)) if 0 <= yrs[i] - yrs[j] <= window] or [0.0])
+                     for i in range(len(yrs))]
+        return g
+    sa = sa.groupby("player_id", group_keys=False).apply(_smooth)
+    rep = sa.set_index(["player_id", "season"])["_rep"]
+    return pd.Series([float(rep.get((p, s), 0.0))
+                      for p, s in zip(df["player_id"], df["season"])], index=df.index)
 
 
 def league_rate_by_season(df: pd.DataFrame, makes_col: str, att_col: str) -> pd.Series:

@@ -16,7 +16,7 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
   const team = teamDisplay(game, state.currentFranchise, state.currentSeason)
   const openAbilities = state.slots.filter((s) => s.status === 'open').map((s) => s.ability)
   const teamTitle = state.rerollTeamUsed ? 'Team respin used (one per game)' : 'Respin the team (one per game)'
-  const yearTitle = state.rerollYearUsed ? 'Year respin used (one per game)' : 'Respin the year (one per game)'
+  const yearTitle = state.rerollYearUsed ? 'Decade respin used (one per game)' : 'Respin the decade (one per game)'
   // mobile: collapse the "your GOAT" card to give the player list room (always shown on desktop)
   const [cardOpen, setCardOpen] = useState(false)
 
@@ -36,8 +36,8 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
               </button>
             </span>
             <span className="reroll-mini-wrap" title={yearTitle}>
-              <button className="reroll-mini" disabled={!canRerollYear} onClick={actions.rerollYear} aria-label="Respin year">
-                <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" /><span className="reroll-mini__label">Year</span>
+              <button className="reroll-mini" disabled={!canRerollYear} onClick={actions.rerollYear} aria-label="Respin decade">
+                <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" /><span className="reroll-mini__label">Decade</span>
               </button>
             </span>
           </div>

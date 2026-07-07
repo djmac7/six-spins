@@ -5,7 +5,7 @@ import { makeDealer, randomSeed } from './game/rng.js'
 import { seedForDate, dayNumber, todayStr, isDateStr } from './game/daily.js'
 import { saveDaily, getDaily, getStats } from './game/storage.js'
 import { ratingSquares } from './ui/share.js'
-import { percentileTier } from './ui/helpers.js'
+import { computeOvr } from './ui/helpers.js'
 import { DAILY_ENABLED, PLAYERS_ENABLED } from './config.js'
 import ModeBar from './ui/ModeBar.jsx'
 import HowToPlay from './ui/HowToPlay.jsx'
@@ -115,7 +115,7 @@ function Shell({ game }) {
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
-      {nav.view === 'archive' && <ArchiveScreen onPlayDate={goto.playDate} onClose={goto.daily} />}
+      {nav.view === 'archive' && <ArchiveScreen game={game} onPlayDate={goto.playDate} onClose={goto.daily} />}
 
       {PLAYERS_ENABLED && nav.view === 'browse' && <BrowseScreen game={game} onClose={goHome} />}
 
@@ -152,13 +152,11 @@ function Game({ game, session, nav, hideStats }) {
     if (state.phase !== 'reveal' && state.phase !== 'result') return
     saved.current = true
     if (session.mode !== 'daily') return
-    const percentile = Math.round(game.getPercentile(state.result.total))
     setStats(
       saveDaily(session.date, {
         total: state.result.total,
         ceiling: state.result.ceiling,
-        percentile,
-        tier: percentileTier(percentile),
+        ovr: computeOvr(state.result.total),
         squares: ratingSquares(state.slots),
         slots: state.slots.map((s) => ({
           ability: s.ability, playerId: s.playerId, rating: s.rating, franchise: s.franchise, season: s.season,

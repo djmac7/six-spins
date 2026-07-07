@@ -1,8 +1,18 @@
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Sun, Moon } from 'lucide-react'
+import { X, Sun, Moon, ChevronRight } from 'lucide-react'
+import InfoModal from './InfoModal.jsx'
 
-// Settings overlay: appearance (light/dark) + difficulty (hide player stats).
+const ABOUT_LINKS = [
+  { key: 'methodology', label: 'Attributes Methodology', desc: 'How the ratings are calculated.' },
+  { key: 'privacy', label: 'Privacy Policy', desc: 'What we store (almost nothing).' },
+  { key: 'terms', label: 'Terms of Service', desc: 'The fan-project fine print.' },
+]
+
+// Settings overlay: appearance (light/dark) + difficulty (hide player stats) + about/legal.
 export default function SettingsModal({ settings, update, onClose }) {
+  const [doc, setDoc] = useState(null)
+  if (doc) return <InfoModal doc={doc} onBack={() => setDoc(null)} onClose={onClose} />
   return createPortal(
     <div className="settings-backdrop" onClick={onClose}>
       <div className="settings" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Settings">
@@ -41,6 +51,17 @@ export default function SettingsModal({ settings, update, onClose }) {
             <span className="toggle__knob" />
           </button>
         </div>
+
+        <div className="settings__section">About &amp; Legal</div>
+        {ABOUT_LINKS.map((l) => (
+          <button key={l.key} className="setting-row setting-link" onClick={() => setDoc(l.key)}>
+            <div className="setting-row__text">
+              <span className="setting-row__label">{l.label}</span>
+              <span className="setting-row__desc">{l.desc}</span>
+            </div>
+            <ChevronRight size={18} className="setting-link__chev" />
+          </button>
+        ))}
 
         <button className="btn-primary" onClick={onClose}>Done</button>
       </div>

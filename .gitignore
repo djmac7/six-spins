@@ -15,3 +15,7 @@ __pycache__/
 
 # determinism snapshot
 data/goat-data.json.run1
+
+# Raw NBA box-score dataset (kaggle: eoinamoore/historical-nba-data-and-player-box-scores)
+# — pinned locally for the playoff/clutch signal; keep out of the repo.
+data/raw2/

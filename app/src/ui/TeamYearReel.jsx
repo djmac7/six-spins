@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { readableText } from './helpers.js'
+import { readableText, seasonLabel } from './helpers.js'
 import { teamLogoUrl } from './assets.js'
 
 const ITEM_H = 92 // px, must match .tyreel__item height in CSS
@@ -71,25 +71,24 @@ export default function TeamYearReel({
         animate={animateYear}
         go={go}
         target={{ id: targetSeason }}
-        renderItem={(x) => <div className="tyreel__item year">{x.id}</div>}
+        renderItem={(x) => <div className="tyreel__item year">{seasonLabel(x.id)}</div>}
         onEnd={primary === 'year' ? finish : undefined}
       />
     </div>
   )
 }
 
-// Year reel ticks through EVERY consecutive year in the pool's range (an odometer), in
-// ascending order, landing on the target (which is always a real pool season).
+// Era reel ticks through the pool's time-axis tokens IN ORDER (an odometer), landing on
+// the target (always a real pool token). Tokens are opaque — int seasons or decade
+// labels — so the strip cycles the ordered token list rather than doing year math.
 function buildOrderedStrip(seasons, target, animate) {
   if (!animate) return [{ id: target }]
-  const minY = Math.min(...seasons)
-  const maxY = Math.max(...seasons)
-  const span = maxY - minY + 1
+  const span = seasons.length
+  const ti = Math.max(seasons.indexOf(target), 0)
   const count = Math.max(28, span)
   const out = []
   for (let i = 0; i < count; i++) {
-    const y = minY + (((target - minY - (count - 1) + i) % span) + span) % span
-    out.push({ id: y })
+    out.push({ id: seasons[(((ti - (count - 1) + i) % span) + span) % span] })
   }
   return out
 }

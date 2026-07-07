@@ -76,7 +76,7 @@ export default function RosterBoard({ team, players, openAbilities, onAssign, hi
     <div className="roster">
       <div className="roster__banner" style={{ '--team': team.color, color: textColor }}>
         <div className="roster__crest">
-          <TeamLogo franchise={team.logoId || team.id} color={team.color} size={40} />
+          <TeamLogo franchise={team.logoId || team.id} fallback={team.id} color={team.color} size={40} />
         </div>
         <div className="roster__title">
           <div className="roster__team">{team.label}</div>
@@ -181,7 +181,7 @@ function AssignSheet({ player, openAbilities, team, hideStats = false, onPick, o
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet__head">
           <Avatar name={player.name} src={playerPhotoUrl(player)} color={team.color} size={46} />
-          <div>
+          <div className="sheet__head-id">
             <div className="sheet__name">{player.name}</div>
             <div className="sheet__sub">{player.team_label || team.label}</div>
           </div>

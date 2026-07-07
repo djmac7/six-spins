@@ -1,14 +1,14 @@
-import { Crosshair, Flame, Handshake, Lock, Shield, Grab } from 'lucide-react'
+import { Crosshair, Flame, Handshake, Shield, Timer, Grab } from 'lucide-react'
 
 // Placeholder representative line-icons per attribute (real SVGs, swap for custom art later):
 // 🎯→crosshair (sniper) · scoring→flame (bucket-getter) · playmaking→handshake (dimes) ·
-// perimeter→lock (lockdown) · interior→shield (rim anchor) · rebounding→grab (boards).
+// defense→shield (lockdown/anchor) · clutch→timer (dagger time) · rebounding→grab (boards).
 const ICONS = {
   shooting: Crosshair,
   scoring: Flame,
   playmaking: Handshake,
-  perimeter_d: Lock,
-  rim_protection: Shield,
+  defense: Shield,
+  clutch: Timer,
   rebounding: Grab,
 }
 

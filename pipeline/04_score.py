@@ -15,63 +15,29 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from common import (load_config, work_path, percentile_rank, percentile_rank_within,
-                    weighted_composite, credibility_shrink, bell_curve, scoring_guardrail)
+                    weighted_composite, credibility_shrink, bell_curve, scoring_guardrail,
+                    desaturated_rank)
 
 RATINGS = ["shooting", "scoring", "playmaking",
-           "perimeter_d", "rim_protection", "rebounding"]
+           "defense", "clutch", "rebounding"]
+
+# components ranked WITHIN season regardless of their rating's era mode: playoff PPG is a
+# volume stat in a pace-inflated context, so a season's playoff scoring leader rates elite
+# in any era (mirrors why the whole `scoring` rating is era-relative).
+ERA_REL_COMPONENTS = {("clutch", "po_pts")}
 
 
-def _perimeter_dbpm_gate(blk_pct: pd.Series, cfg: dict, gmin=None) -> pd.Series:
-    """Block-rate gate for perimeter_d credit (§7). Returns a multiplier in [gmin, 1]:
-    1.0 for true perimeter players (blk% <= blk_lo) ramping to gmin for shot-blocking rim
-    anchors (blk% >= blk_hi). Used to strip the rim portion of a big's whole-court dbpm
-    from his PERIMETER rating, and (with gmin=0) to deny shot-blockers any perimeter credit
-    from a position-blind All-Defense/DPOY honor — that honor routes to rim_protection."""
-    pg = cfg.get("perimeter_gate")
-    if not pg:
-        return pd.Series(1.0, index=blk_pct.index)
-    lo, hi = float(pg["blk_lo"]), float(pg["blk_hi"])
-    gmin = float(pg["gmin"]) if gmin is None else gmin
-    b = pd.to_numeric(blk_pct, errors="coerce").fillna(0.0)
-    return pd.Series(np.clip((hi - b) / (hi - lo), gmin, 1.0), index=blk_pct.index)
-
-
-def _rim_accolade_gate(drb_pct: pd.Series, cfg: dict) -> pd.Series:
-    """Interior-routing gate for rim_protection's defensive-accolade credit (§7). Increases
-    with defensive-rebound rate: ~gmin for perimeter players (low drb%, whose All-Defense honor
-    belongs to perimeter_d) ramping to 1.0 for interior anchors (high drb%). Uses rebounding, NOT
-    blocks, so a no-swat anchor like Bam Adebayo still receives full interior accolade credit."""
-    rg = cfg.get("rim_accolade_gate")
-    if not rg:
-        return pd.Series(1.0, index=drb_pct.index)
-    lo, hi, gmin = float(rg["drb_lo"]), float(rg["drb_hi"]), float(rg["gmin"])
-    d = pd.to_numeric(drb_pct, errors="coerce").fillna(0.0)
-    return pd.Series(np.clip((d - lo) / (hi - lo), gmin, 1.0), index=drb_pct.index)
-
-
-def _accolade_rank(vals, cfg: dict) -> np.ndarray:
-    """De-saturated ranking for the def_accolade component (§7). A plain percentile_rank
-    saturates: only ~13% of seasons are honored at all, so every voted season — fringe or
-    First-Team — piles into the top ~5 points (a couple of votes ranks ~95th, unanimous DPOY
-    ~100th), and the honor can't separate a stopper like Derrick White from a token-vote name.
-    This ranks the HONORED seasons among THEMSELVES and spreads them across [honored_floor, 100]
-    by magnitude, while non-honored seasons sit at a neutral `zero_rank`. First-Team vs fringe
-    now genuinely separate; box-score-only defenders (high-steal, no honor — Iverson) keep their
-    rating from the other components and are only mildly affected by the lower neutral baseline."""
-    ds = (cfg.get("defensive_accolade") or {}).get("desaturate") or {}
-    if not ds.get("enabled", False):
-        return percentile_rank(vals)
-    zero_rank = float(ds.get("zero_rank", 35.0))
-    floor = float(ds.get("honored_floor", 60.0))
-    x = np.asarray(vals, dtype=float)
-    out = np.full(x.shape, np.nan)
-    finite = ~np.isnan(x)
-    out[finite] = zero_rank                       # non-honored (or gated-out) -> neutral baseline
-    pos = finite & (x > 0)
-    if pos.any():
-        pr = percentile_rank(x[pos])              # 0-100 among honored seasons only
-        out[pos] = floor + (100.0 - floor) * (pr / 100.0)
-    return out
+def _accolade_ds(cfg: dict) -> dict:
+    """Map accolade component name -> its desaturate config (see common.desaturated_rank).
+    Accolade components are sparse recorded-vote signals; they are ALWAYS ranked
+    de-saturated and cross-era (vote shares are already season-scoped), even inside an
+    era-relative rating like scoring."""
+    return {
+        "def_accolade": (cfg.get("defensive_accolade") or {}).get("desaturate") or {},
+        "scoring_accolade": (cfg.get("offensive_accolade") or {}).get("desaturate") or {},
+        "star_accolade": (cfg.get("offensive_accolade") or {}).get("desaturate") or {},
+        "clutch_accolade": (cfg.get("clutch") or {}).get("desaturate") or {},
+    }
 
 
 def component_values(df: pd.DataFrame, cfg: dict) -> dict:
@@ -129,6 +95,7 @@ def component_values(df: pd.DataFrame, cfg: dict) -> dict:
             "pts_rate": num("pts") / num("g").clip(lower=1.0),  # PPG (era-relative volume — leads)
             "usg": num("usg_percent"),                          # shot-creation load
             "ts_eff": num("ts_percent"),                        # REAL TS% efficiency (3s at full value)
+            "scoring_accolade": num("scoring_accolade"),        # SENTIMENT: MVP/All-NBA share + scoring title
         },
         "playmaking": {
             "ast_total": num("ast") / g,             # per-game assists (volume — availability-neutral)
@@ -141,25 +108,34 @@ def component_values(df: pd.DataFrame, cfg: dict) -> dict:
             # protecting the ball relative to offensive load, so high-usage engines (LeBron)
             # aren't penalized; replaces raw ast/to, which double-counted low-TO pass specialists.
             "ast_security": num("ast_percent") / pd.to_numeric(df["tov_percent"], errors="coerce").clip(lower=1.0),
+            "star_accolade": num("star_accolade"),   # SENTIMENT: small lift for recognized engines
         },
-        "perimeter_d": {
-            "stl_pct": num("stl_percent"),
-            # dbpm is WHOLE-court box +/-; gate its perimeter credit DOWN for shot-blocking rim
-            # anchors (see perimeter_gate) so Robinson/Ewing/Hakeem don't leak in as elite PERIMETER
-            # defenders. Steals are genuine perimeter events and stay ungated.
-            "dbpm": num("dbpm") * _perimeter_dbpm_gate(num("blk_percent"), cfg),
-            "stl_total": num("stl") / g,             # per-game steals (volume — availability-neutral)
-            # All-Defense/DPOY honor, block-rate-gated to GUARDS (gmin=0 so shot-blocking rim
-            # anchors get ZERO perimeter credit from a position-blind honor — it routes to rim).
-            "def_accolade": num("def_accolade") * _perimeter_dbpm_gate(num("blk_percent"), cfg, gmin=0.0),
-        },
-        "rim_protection": {
-            "blk_pct": num("blk_percent"),
+        # DEFENSE — one merged rating (perimeter + interior). The accolade leads (the only
+        # signal that sees both point-of-attack containment and no-swat anchoring); steals
+        # and blocks each keep a rate + volume term so both defender archetypes can score
+        # the box share. No routing gates — they only existed to split credit across the
+        # two old defensive axes.
+        # The box sub-components below feed the perimeter/interior ARCHETYPE sub-composites
+        # (config `defense_box`); a player's box credit is the max of the two, re-ranked —
+        # so pure perimeter stoppers aren't dragged by real-but-low block stats and vice
+        # versa. Assembled in main() (see the defense special case).
+        "defense": {
+            "def_accolade": num("def_accolade"),
             "dbpm": num("dbpm"),
+            "stl_pct": num("stl_percent"),
+            "stl_total": num("stl") / g,             # per-game steals (volume — availability-neutral)
+            "blk_pct": num("blk_percent"),
             "blk_total": num("blk") / g,             # per-game blocks (volume — availability-neutral)
-            "drb_pct": num("drb_percent"),           # interior possession-ending (lifts no-swat anchors like Bam)
-            # All-Defense/DPOY honor, drb-rate-gated to INTERIOR anchors (so Bam's honor counts here)
-            "def_accolade": num("def_accolade") * _rim_accolade_gate(num("drb_percent"), cfg),
+            "drb_pct": num("drb_percent"),           # interior possession-ending (lifts no-swat anchors)
+        },
+        # CLUTCH — playoff production + recorded clutch recognition (see config `clutch`).
+        # Playoff columns are merged from 01b_playoffs (NaN for no-playoff seasons — the
+        # composite renormalizes onto clutch_accolade's neutral zero_rank: honest unknown).
+        "clutch": {
+            "po_pts": num("po_ppg"),                 # playoff PPG (era-relative — see ERA_REL_COMPONENTS)
+            "po_depth": num("po_g"),                 # playoff games (deep runs vs better opposition)
+            "po_retention": num("po_ts") - num("ts_percent"),  # rise vs shrink in the playoffs
+            "clutch_accolade": num("clutch_accolade"),
         },
         "rebounding": {
             "trb_pct": num("trb_percent"),
@@ -189,6 +165,32 @@ def main():
     cfg = load_config()
     df = pd.read_parquet(work_path(cfg, "normalized.parquet"))
     weights = cfg["weights"]
+
+    # playoff aggregates for CLUTCH (01b_playoffs): season-level, so they broadcast across
+    # a traded player's team stints. No-playoff seasons stay NaN (composite renormalizes).
+    po_cols = ["po_g", "po_ppg", "po_ts", "po_fga"]
+    po_path = work_path(cfg, "playoffs.parquet")
+    if cfg.get("clutch", {}).get("enabled") and os.path.exists(po_path):
+        po = pd.read_parquet(po_path)[["player_id", "season"] + po_cols]
+        df = df.merge(po, on=["player_id", "season"], how="left")
+    else:
+        for c in po_cols:
+            df[c] = np.nan
+
+    # No-playoff (or playoff-join-miss) seasons must rank LOW on clutch, not be lifted by a
+    # lone accolade. If the playoff box components stay NaN, weighted_composite renormalizes
+    # onto clutch_accolade alone — so a Finals-MVP name whose box failed to join (e.g. "JoJo"
+    # vs "Jo Jo White") inflates to ~100, ABOVE players whose playoffs joined. Fix: fill
+    # missing playoff VOLUME with 0 (ranks at the bottom) and missing playoff TS with the
+    # regular-season TS (retention 0, neutral). Now the accolade is a lift on real playoff
+    # production, never the whole rating. (A player's decade CLUTCH is still their best
+    # playoff season — no-playoff journeymen correctly read low.)
+    reg_ts = pd.to_numeric(df["ts_percent"], errors="coerce")
+    df["po_g"] = pd.to_numeric(df["po_g"], errors="coerce").fillna(0.0)
+    df["po_ppg"] = pd.to_numeric(df["po_ppg"], errors="coerce").fillna(0.0)
+    df["po_fga"] = pd.to_numeric(df["po_fga"], errors="coerce").fillna(0.0)
+    df["po_ts"] = pd.to_numeric(df["po_ts"], errors="coerce").fillna(reg_ts)
+
     comps = component_values(df, cfg)
 
     # shooting shot-profile gate (reused for the composite ceiling below and the final cap):
@@ -232,14 +234,34 @@ def main():
     for cat in RATINGS:
         # 1st round: percentile-rank each component. era-relative cats (scoring) rank
         # WITHIN season so the result normalizes eras; the rest rank across the universe.
-        if cat in era_rel:
-            ranks = {name: percentile_rank_within(vals, df["season"])
-                     for name, vals in comps[cat].items()}
-        else:
-            ranks = {name: (_accolade_rank(vals, cfg) if name == "def_accolade"
-                            else percentile_rank(vals))
-                     for name, vals in comps[cat].items()}
+        # accolade components (recorded vote shares) always rank de-saturated + cross-era,
+        # even inside an era-relative rating — a vote share is already season-scoped.
+        # ERA_REL_COMPONENTS forces a single component within-season (playoff PPG).
+        acc_ds = _accolade_ds(cfg)
+
+        def _rank_one(name, vals):
+            if name in acc_ds:
+                return desaturated_rank(vals, acc_ds[name])
+            if cat in era_rel or (cat, name) in ERA_REL_COMPONENTS:
+                return percentile_rank_within(vals, df["season"])
+            return percentile_rank(vals)
+
+        ranks = {name: _rank_one(name, vals) for name, vals in comps[cat].items()}
         rank_df = pd.DataFrame(ranks, index=df.index)
+        # DEFENSE: box credit = the player's BEST defensive ARCHETYPE. Build the perimeter
+        # and interior sub-composites (config `defense_box`), take the max, re-rank it, and
+        # blend with the accolade — a pure perimeter stopper isn't dragged by real-but-low
+        # block stats (a zero, unlike a missing component, never renormalizes away).
+        if cat == "defense":
+            box = cfg["defense_box"]
+            perim = weighted_composite(rank_df, box["perimeter"])
+            inter = weighted_composite(rank_df, box["interior"])
+            box_best = np.fmax(perim, inter)          # NaN-tolerant max (either archetype)
+            rank_df["box_best"] = percentile_rank(box_best)
+            df["_rk_defense_perimeter"] = perim
+            df["_rk_defense_interior"] = inter
+            ranks = {"def_accolade": ranks["def_accolade"], "box_best": rank_df["box_best"]}
+            rank_df = rank_df[["def_accolade", "box_best"]]
         for name in ranks:
             df[f"_rk_{cat}_{name}"] = rank_df[name]
         # weighted-average -> composite (weights renormalized over present components)

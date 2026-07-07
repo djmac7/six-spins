@@ -20,26 +20,63 @@ export function readableText(hex) {
   return lum > 0.6 ? '#0a0a0f' : '#ffffff'
 }
 
-// Rating tiers drive the chip color ramp (broadcast-graphic feel).
-export function ratingTier(v) {
-  if (v >= 90) return 'elite'
-  if (v >= 80) return 'great'
-  if (v >= 65) return 'good'
-  if (v >= 45) return 'mid'
-  return 'low'
+// Display form of a time-axis token: decade labels drop the century ("1990s" -> "90s");
+// int seasons pass through. Tokens stay opaque everywhere else in the game logic.
+export function seasonLabel(season) {
+  if (typeof season === 'string' && /^\d{4}s$/.test(season)) return season.slice(2)
+  return season
 }
 
-// Percentile tiers drive the high/low reveal treatment (§5).
-// Seven percentile tiers (NBA-accolade ladder), best -> worst.
-export function percentileTier(p) {
-  if (p >= 99) return 'goat'
-  if (p >= 92) return 'hof'
-  if (p >= 80) return 'allnba'
-  if (p >= 60) return 'allstar'
-  if (p >= 35) return 'role'
-  if (p >= 15) return 'bench'
-  return 'bust'
+// Rating tiers drive the chip color ramp (broadcast-graphic feel). Thresholds sit on the
+// decade-grain 2K-style scale (decade_curve: mean 75, sd 9, floor 55, cap 99): elite ≈ top
+// 3% of the decade-grain universe, great ≈ top 16%, good ≈ top half.
+export function ratingTier(v) {
+  if (v >= 99) return 'goat'   // gold — reserved for a perfect 99 (GOAT)
+  if (v >= 90) return 'elite'  // green — right below GOAT
+  if (v >= 82) return 'great'  // blue
+  if (v >= 74) return 'good'   // amber
+  if (v >= 65) return 'mid'    // orange
+  return 'low'                 // red
 }
+
+// 2K-STYLE OVERALL RATING. The six stolen attributes roll up into ONE overall (the hook).
+// NOT a raw average: the top of the average is so compressed (even a great card rarely
+// averages > 98) that a linear avg makes 99 nearly unreachable. Instead the OVR is a CURVED
+// map of the total that anchors 99 to a STRONG-but-imperfect card — a total ~592 (five 99s
+// + a 97, say), which a good player reaches in ~30-45 min — and scales down from there.
+// Calibrated against simulated play (see pipeline sim). Clamped to [40, 99].
+const OVR_ANCHOR_TOTAL = 592 // total that maps to a 99 OVR
+const OVR_LO_TOTAL = 480     // total that maps to OVR_LO
+const OVR_LO = 78
+const OVR_SLOPE = (99 - OVR_LO) / (OVR_ANCHOR_TOTAL - OVR_LO_TOTAL)
+export function computeOvr(total) {
+  return Math.max(40, Math.min(99, Math.round(99 - (OVR_ANCHOR_TOTAL - total) * OVR_SLOPE)))
+}
+// OVR tier -> color class (`tc`, reused by all the tc-*/tier-bg-* CSS) + 2K-flavored label +
+// share copy. Best -> worst; a 99 is legendary, ~92+ elite, most good games land 88-95.
+// Thresholds align 1:1 with the ratingTier color bands (goat/elite/great/good/mid/low) so
+// each tier is a DISTINCT color on the meter and badge.
+export const OVR_TIERS = [
+  { min: 99, label: 'GOAT',      head: 'the GOAT 🐐',      cta: 'Your turn. Good luck topping it.' },
+  { min: 90, label: 'Superstar', head: 'a superstar 🏆',   cta: 'Think you can top it?' },
+  { min: 82, label: 'All-Star',  head: 'an All-Star ⭐',    cta: 'Think you can top it?' },
+  { min: 74, label: 'Starter',   head: 'a solid starter',  cta: 'Your turn — can you beat it?' },
+  { min: 65, label: 'Rotation',  head: 'a rotation piece', cta: 'Bet you can do better.' },
+  { min: 0,  label: 'Bench',     head: 'deep-bench depth', cta: 'You can definitely beat this.' },
+]
+export function ovrTier(ovr) {
+  return OVR_TIERS.find((t) => ovr >= t.min) || OVR_TIERS[OVR_TIERS.length - 1]
+}
+// The OVR is colored like an ATTRIBUTE of the same value — same green/blue/slate palette as
+// the rating chips — so the headline number matches the card. `ratingTier` -> tc-* class.
+export function ovrColorClass(ovr) {
+  return 'tc-' + ratingTier(ovr)
+}
+export function ovrColor(ovr) {
+  return `var(--t-${ratingTier(ovr)})`
+}
+// OVR at/above this earns confetti; 96+ (All-Time Great) gets the full GOAT spectacle.
+export const OVR_CELEBRATE = 92
 
 // Resolve a (franchise, season) into display fields. Works off the loaded game's
 // franchisesById; falls back to the abbreviation + neutral color if unknown.
@@ -54,18 +91,8 @@ export function teamDisplay(game, franchise, season) {
     logoId: era?.id || franchise, // logo asset to render (historical when applicable)
     name,
     color: era?.color || fr?.color || '#2a2a36',
-    label: season != null ? `${season} ${name}` : name,
+    label: season != null ? `${seasonLabel(season)} ${name}` : name,
   }
-}
-
-export const TIER_BLURB = {
-  goat: 'THE GOAT.',
-  hof: 'Hall of Famer.',
-  allnba: 'All-NBA.',
-  allstar: 'All-Star.',
-  role: 'Role Player.',
-  bench: 'Benchwarmer.',
-  bust: 'Bust.',
 }
 
 // GOAT-tier flourish (you maxed the ladder). Pure hoops culture — jersey retirement, the
@@ -87,33 +114,13 @@ export function randomGoatLine() {
   return GOAT_LINES[Math.floor(Math.random() * GOAT_LINES.length)]
 }
 
-// One accent color per tier (drives the percentile slam + result-card edge/headline).
+// One accent color per tier class (`tc`), reused by the OVR tiers via OVR_TIERS[].tc.
+// Drives the OVR slam + result-card edge/headline (CSS keys off tc-<tc> / tier-bg-<tc>).
 export const TIER_COLOR = {
-  goat: '#c89200',   // gold
-  hof: '#7c3aed',    // violet
-  allnba: '#ea580c', // orange
-  allstar: '#0d9488',// teal
-  role: '#495057',   // slate
-  bench: '#6f7072',  // gray
-  bust: '#9aa0a6',   // faint gray
-}
-
-// Tiers that earn confetti / a celebratory treatment.
-export const TIER_CELEBRATE = new Set(['goat', 'hof', 'allnba'])
-
-// Ordered ladder (best -> worst) with the percentile floor for each tier. Drives the
-// gamified progress meter; `hi` is filled in for each tier's display range.
-export const TIERS = [
-  { key: 'goat', label: 'THE GOAT', min: 99 },
-  { key: 'hof', label: 'Hall of Famer', min: 92 },
-  { key: 'allnba', label: 'All-NBA', min: 80 },
-  { key: 'allstar', label: 'All-Star', min: 60 },
-  { key: 'role', label: 'Role Player', min: 35 },
-  { key: 'bench', label: 'Benchwarmer', min: 15 },
-  { key: 'bust', label: 'Bust', min: 0 },
-].map((t, i, arr) => ({ ...t, hi: i === 0 ? 100 : arr[i - 1].min - 1 }))
-
-// Percentile range label for a tier, e.g. "80–91st".
-export function tierRange(t) {
-  return t.min === t.hi ? `${t.min}th` : `${t.min}–${t.hi}th`
+  goat: '#c89200',   // gold   (All-Time Great)
+  hof: '#7c3aed',    // violet (Superstar)
+  allnba: '#ea580c', // orange (All-Star)
+  allstar: '#0d9488',// teal   (Starter)
+  role: '#495057',   // slate  (Rotation)
+  bust: '#9aa0a6',   // gray   (Bench)
 }

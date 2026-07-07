@@ -53,8 +53,9 @@ def _build_pool(data: dict, abilities: list[str]):
     pool = data["pool"]
     cells, by_season, by_franchise = {}, {}, {}
     for key, roster in pool["rosters"].items():
-        season_str, fr = key.split("_", 1)
-        season = int(season_str)
+        # the time-axis token is OPAQUE: an int season ("1996") or a decade label
+        # ("1990s") depending on pool_grain — never parsed, only used as a grouping key.
+        season, fr = key.split("_", 1)
         cells[key] = [(pid, ratings_by_id[pid]) for pid in roster]
         by_season.setdefault(season, []).append(fr)
         by_franchise.setdefault(fr, []).append(season)
@@ -73,8 +74,7 @@ def _play_once(rng, cells, keys, by_season, by_franchise, p_reroll):
 
     for _ in range(6):
         key = keys[rng.randrange(len(keys))]
-        season_str, fr = key.split("_", 1)
-        season = int(season_str)
+        season, fr = key.split("_", 1)   # opaque axis token (int season OR decade label)
 
         if (reroll_team or reroll_year) and rng.random() < p_reroll:
             options = []

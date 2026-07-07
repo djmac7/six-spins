@@ -3,11 +3,11 @@ import { parseFilters, buildFilterContext, indexPlayers } from './filterQuery.js
 
 // A tiny stand-in pool. ids follow the real "slug_season_FR" shape so season parses from the id.
 const PLAYERS = [
-  mk('rodmde01', 1996, 'CHI', 'Dennis Rodman', { rebounding: 99, scoring: 20, shooting: 30, perimeter_d: 85, rim_protection: 60, playmaking: 40 }, { ppg: 5.5, rpg: 14.9, apg: 2.5, spg: 0.7, bpg: 0.6 }),
-  mk('jordami01', 1996, 'CHI', 'Michael Jordan', { rebounding: 70, scoring: 99, shooting: 88, perimeter_d: 95, rim_protection: 55, playmaking: 80 }, { ppg: 30.4, rpg: 6.6, apg: 4.3, spg: 2.2, bpg: 0.5 }),
-  mk('curryst01', 2016, 'GSW', 'Stephen Curry', { rebounding: 45, scoring: 95, shooting: 99, perimeter_d: 60, rim_protection: 20, playmaking: 90 }, { ppg: 30.1, rpg: 5.4, apg: 6.7, spg: 2.1, bpg: 0.2 }),
-  mk('mutomdi01', 1996, 'DEN', 'Dikembe Mutombo', { rebounding: 92, scoring: 40, shooting: 20, perimeter_d: 50, rim_protection: 99, playmaking: 25 }, { ppg: 11.8, rpg: 11.8, apg: 1.5, spg: 0.4, bpg: 4.5 }),
-  mk('bryanko01', 2006, 'LAL', 'Kobe Bryant', { rebounding: 60, scoring: 98, shooting: 85, perimeter_d: 90, rim_protection: 45, playmaking: 75 }, { ppg: 35.4, rpg: 5.3, apg: 4.5, spg: 1.8, bpg: 0.4 }),
+  mk('rodmde01', 1996, 'CHI', 'Dennis Rodman', { rebounding: 99, scoring: 20, shooting: 30, defense: 90, clutch: 70, playmaking: 40 }, { ppg: 5.5, rpg: 14.9, apg: 2.5, spg: 0.7, bpg: 0.6 }),
+  mk('jordami01', 1996, 'CHI', 'Michael Jordan', { rebounding: 70, scoring: 99, shooting: 88, defense: 95, clutch: 99, playmaking: 80 }, { ppg: 30.4, rpg: 6.6, apg: 4.3, spg: 2.2, bpg: 0.5 }),
+  mk('curryst01', 2016, 'GSW', 'Stephen Curry', { rebounding: 45, scoring: 95, shooting: 99, defense: 60, clutch: 92, playmaking: 90 }, { ppg: 30.1, rpg: 5.4, apg: 6.7, spg: 2.1, bpg: 0.2 }),
+  mk('mutomdi01', 1996, 'DEN', 'Dikembe Mutombo', { rebounding: 92, scoring: 40, shooting: 20, defense: 99, clutch: 60, playmaking: 25 }, { ppg: 11.8, rpg: 11.8, apg: 1.5, spg: 0.4, bpg: 4.5 }),
+  mk('bryanko01', 2006, 'LAL', 'Kobe Bryant', { rebounding: 60, scoring: 98, shooting: 85, defense: 88, clutch: 95, playmaking: 75 }, { ppg: 35.4, rpg: 5.3, apg: 4.5, spg: 1.8, bpg: 0.4 }),
 ]
 
 function mk(slug, season, fr, name, ratings, stats) {
@@ -68,7 +68,7 @@ describe('parseFilters', () => {
 
   it('combines criteria across categories (AND)', () => {
     expect(run('elite scorers from the 90s on the Bulls')).toEqual(['Michael Jordan'])
-    expect(run('great rim protection 4+ blocks')).toEqual(['Dikembe Mutombo'])
+    expect(run('great defense 4+ blocks')).toEqual(['Dikembe Mutombo'])
   })
 
   it('falls back to a name search for unrecognized words', () => {

@@ -5,37 +5,32 @@ import TeamLogo from './TeamLogo.jsx'
 import PlayerComp from './PlayerComp.jsx'
 import AbilityIcon from './AbilityIcon.jsx'
 import { playerPhotoUrl } from './assets.js'
-import { ratingTier, percentileTier, TIER_BLURB, teamDisplay } from './helpers.js'
-import { ordinalSuffix } from './ordinal.js'
+import { ratingTier, computeOvr, ovrTier, ovrColorClass, teamDisplay } from './helpers.js'
 import { shareDisplayUrl } from './share.js'
 
 // The shareable result card (App spec §6) — pure presentation behind a forwardRef so it can
 // be rasterized (toPng/toBlob) from wherever it's mounted, visibly OR off-screen. That's
 // what lets sharing happen inline on the reveal screen without a separate share page.
-const ResultCard = forwardRef(function ResultCard({ game, state, percentile, comp, tag = '82-0 inspired' }, ref) {
+const ResultCard = forwardRef(function ResultCard({ game, state, comp, tag = '82-0 inspired' }, ref) {
   const total = state.result.total
-  const ceiling = state.result.ceiling
-  const tier = percentileTier(percentile)
+  const ovr = computeOvr(total)
+  const t = ovrTier(ovr)
   const playUrl = shareDisplayUrl()
 
   return (
-    <div className={'result-card tier-edge tc-' + tier} ref={ref}>
+    <div className={'result-card tier-edge ' + ovrColorClass(ovr)} ref={ref}>
       <div className="result-card__brand">
         <span className="result-card__logo">SIX <b>SPINS</b></span>
         <span className="result-card__tag">{tag}</span>
       </div>
 
       <div className="result-card__headline">
-        <div className="result-card__pct">
-          {percentile}<span className="result-card__ord">{ordinalSuffix(percentile)}</span>
-          <span className="result-card__pctword">pctl</span>
-        </div>
         <div className="result-card__score">
-          <span className="result-card__total">{total}</span>
-          <span className="result-card__ceil">/ {ceiling}</span>
+          <span className="result-card__total">{ovr}</span>
+          <span className="result-card__ceil">OVR</span>
         </div>
+        <div className="result-card__gradebadge">{t.label}</div>
       </div>
-      <div className="result-card__blurb">{TIER_BLURB[tier]}</div>
 
       <div className="result-card__rows">
         {state.slots.map((slot, i) => {
@@ -50,7 +45,7 @@ const ResultCard = forwardRef(function ResultCard({ game, state, percentile, com
                 <span className="rrow__ability">{meta.label}</span>
                 <span className="rrow__name">{player?.name || '-'}</span>
                 <span className="rrow__teamline">
-                  <TeamLogo franchise={team?.logoId} color={color} size={15} badge={false} />
+                  <TeamLogo franchise={team?.logoId} fallback={team?.id} color={color} size={15} badge={false} />
                   <span className="rrow__team">{team?.label || ''}</span>
                 </span>
               </span>

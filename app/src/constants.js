@@ -6,9 +6,9 @@ export const ABILITIES = [
   { key: 'shooting',       label: 'Shooting',       short: 'SHOOT' },
   { key: 'scoring',        label: 'Scoring',        short: 'SCORE' },
   { key: 'playmaking',     label: 'Playmaking',     short: 'DIME' },
-  { key: 'perimeter_d',    label: 'Perimeter Defense', short: 'PERIM' },
-  { key: 'rim_protection', label: 'Interior Defense', short: 'RIM' },
+  { key: 'defense',        label: 'Defense',        short: 'D' },
   { key: 'rebounding',     label: 'Rebounding',     short: 'BOARDS' },
+  { key: 'clutch',         label: 'Clutch',         short: 'CLUTCH' },
 ]
 
 export const ABILITY_KEYS = ABILITIES.map((a) => a.key)

@@ -39,6 +39,7 @@ function makePercentile(pctTable) {
   return { getPercentile, scoreForPercentile }
 }
 
+
 // Build the grid indexes the game needs from pool.rosters keys ("SEASON_FRANCHISE").
 function buildPool(pool) {
   const cells = new Map() // key -> [playerId,...]
@@ -47,7 +48,9 @@ function buildPool(pool) {
   for (const [key, roster] of Object.entries(pool.rosters)) {
     cells.set(key, roster)
     const i = key.indexOf('_')
-    const season = Number(key.slice(0, i))
+    // OPAQUE time-axis token: an int season ("1996") or a decade label ("1990s")
+    // depending on the data's pool_grain — kept as the string from the cell key.
+    const season = key.slice(0, i)
     const fr = key.slice(i + 1)
     if (!bySeason.has(season)) bySeason.set(season, [])
     bySeason.get(season).push(fr)

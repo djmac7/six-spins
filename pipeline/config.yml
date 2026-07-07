@@ -3,6 +3,7 @@
 
 source: "basketball-reference via kaggle:sumitrodatta/nba-aba-baa-stats"
 snapshot: "2025-04"            # date/version of the pinned raw CSV download
+snapshot2: "2026-06"           # date/version of the pinned box-score (raw2) download
 
 paths:
   raw: "data/raw"             # pinned Kaggle CSVs (gitignored)
@@ -10,6 +11,7 @@ paths:
   out: "data/goat-data.json"
   percentile_out: "data/percentile-table.json"
   assets: "assets"
+  raw2: "data/raw2"           # box-score dataset (playoffs) — kaggle:eoinamoore/historical-nba-data-and-player-box-scores (gitignored)
 
 # --- §12 Monte Carlo percentile generator (06_montecarlo.py) ---
 # Simulate many LEGAL random playthroughs of the real game (forced assignment,
@@ -20,7 +22,38 @@ montecarlo:
   seed: 20260623             # fixed -> reproducible / byte-identical table
   p_reroll: 0.5              # per-spin probability a random player uses an available reroll
   # ability order is fixed and matches the six slots the game ships (data ratings keys)
-  abilities: ["shooting", "scoring", "playmaking", "perimeter_d", "rim_protection", "rebounding"]
+  abilities: ["shooting", "scoring", "playmaking", "defense", "rebounding", "clutch"]
+
+# NOTE: the final score shown to players is a 2K-style OVERALL rating (0-99) computed in the
+# app from the six picked attributes (see app/src/ui/helpers.js computeOvr) — the pipeline
+# ships the attribute ratings and the Monte Carlo percentile table; it no longer emits letter
+# grades.
+
+# --- pool grain: what one spin cell is ---
+# decade: cells are (decade, franchise) — "90s Bulls". Each player appears once per
+#         (player, franchise, decade) with PEAK ratings: per-ability max of his season
+#         composites within the cell, re-ranked across the decade-grain universe and
+#         mapped through `decade_curve` below. Favors peak over longevity (casual mode).
+# season: the original (season, franchise) grid — one season, that season's ratings.
+pool_grain: "decade"
+
+# earliest playable decade (decade grain only). The ranking universe still spans
+# era_min_season+ (so cross-era percentiles are unaffected), but the pool ships no cell
+# before this decade — and the 2K re-rank curve is calibrated over shipped decades only.
+# The 1950s (sparse rosters, few recognizable-to-casuals names, thinnest stat coverage)
+# are excluded: the game opens at the 1960s.
+pool_min_decade: "1960s"
+
+# --- decade-grain rating scale (05_curate) ---
+# The decade pool is peaks of NBA rotation players, so a mean-50 bell reads insulting
+# ("my guy is a 52?!"). Instead map the decade-grain percentile onto a 2K-style scale:
+# clipped normal with median ~75, elite 97-99 reserved for all-time peaks, floor 55
+# (every playable player is a real NBA player). Monotonic — leaderboards unchanged.
+decade_curve:
+  mean: 75                    # median decade-peak ~ 75 (solid NBA rotation player)
+  sd: 9                       # ~97 at the 99.3th percentile; ~99 only for all-time outliers
+  floor: 55                   # worst playable decade-peak still reads like an NBA player
+  cap: 99                     # 2K-style: 99 is the max attribute; the OVR (avg of 6) tops at 99
 
 # --- §3 rating unit ---
 # team_split: one rating per (player, season, TEAM) stint — a player traded mid-season
@@ -31,11 +64,13 @@ montecarlo:
 rating_unit: "team_split"
 
 # --- §4 universe filter ---
-league: "NBA"                 # drop ABA / BAA rows
-era_min_season: 1980          # season is the END year; 1979-80 -> 1980 (3pt line + full rate-stat tracking)
+league: ["NBA", "BAA"]        # BAA = the NBA's direct 1947-49 predecessor; ABA still dropped
+era_min_season: 1947          # ALL ERAS (casual mode). Missing stats are NaN in the raw data,
+                              # so components simply renormalize away (§7); era-relative
+                              # scoring + accolades carry the old decades.
 min_sample:
-  mp: 500
-  g: 20
+  mp: 500                     # minutes weren't tracked before 1952 — rows with NaN MP fall
+  g: 20                       # back to the games floor alone
 
 # --- §6 empirical-Bayes shrinkage stabilization constants K ---
 shrink_K:
@@ -75,9 +110,11 @@ weights:
                               # BELOW lower-volume, lower-efficiency 2pt scorers. Real TS doesn't penalize 2pt
                               # scorers (volume still leads; Malone/Dantley/Giannis stay 100) — it just stops
                               # erasing the 3pt premium and separates efficient stars from empty-volume scorers.
-    pts_rate: 0.75            # points per game                  (era-relative VOLUME — leads)
-    usg: 0.10                 # usg_percent                      (shot-creation load)
-    ts_eff: 0.15              # true shooting %                  (real EFFICIENCY — 3s at full value)
+    pts_rate: 0.62            # points per game                  (era-relative VOLUME — leads)
+    usg: 0.08                 # usg_percent                      (shot-creation load)
+    ts_eff: 0.14              # true shooting %                  (real EFFICIENCY — 3s at full value)
+    scoring_accolade: 0.16    # MVP/All-NBA vote share + scoring title (SENTIMENT — recorded
+                              # perception; keeps signature scorers from reading jarringly low)
   playmaking:                 # creation-led (volume + rate + LOAD); ball-security via the single usage-fair
                               # ast%/tov% (raw ast/to dropped — it double-counted low-TO pass specialists
                               # like Calderón). ast_total alone over-rewarded pure-volume floor generals on
@@ -85,43 +122,38 @@ weights:
                               # creation_load (ast% x usage) credits CREATING WHILE carrying a scoring load,
                               # lifting LeBron/Luka/Harden's primary-engine years without making non-passing
                               # scorers elite (a low-assist chucker still scores ~0 — ast% is the base).
-    ast_total: 0.34           # ast (season total)      (ABSOLUTE volume — separates GOAT creators)
-    ast_pct: 0.30             # ast_percent             (creation rate; credibility-shrunk on MP)
-    ast_security: 0.16        # ast% / tov%             (usage-fair ball security; credibility-shrunk on ast+TO)
-    creation_load: 0.20       # ast_percent x usg%      (creation under scoring load; credibility-shrunk on MP)
-  perimeter_d:                # rebalanced: steals (gambling-biased) no longer dominate; lean on dbpm + volume.
-                              # dbpm is WHOLE-court box +/-, so its credit here is gated DOWN for shot-blocking
-                              # rim anchors (see perimeter_gate) — otherwise Robinson/Ewing/Hakeem leak in as
-                              # elite PERIMETER defenders. The box score CAN'T see low-steal point-of-attack
-                              # containment, so def_accolade (All-Defense/DPOY) supplies that missing signal —
-                              # lifting stoppers (Bowen/Klay/Smart) and tempering high-steal gamblers (Rubio/AI).
-    stl_pct: 0.10             # stl_percent              (credibility-shrunk on MP)
-    dbpm: 0.14                # dbpm                     (credibility-shrunk on MP; block-rate-gated)
-    stl_total: 0.06           # stl (season total)      (ABSOLUTE volume — rewards durable on-ball defenders)
-    def_accolade: 0.70        # All-Defense + DPOY       (containment the box score misses; block-rate-gated to guards).
-                              # Raised 0.45 -> 0.70 (paired with the de-saturated accolade rank below): the honor is
-                              # the only signal for low-event point-of-attack stoppers (White, Bowen), so it now LEADS
-                              # the box score — a First-Team selection outweighs gaudy-but-empty steal rates.
-                              # NOTE residual limits: a player the box score rates NEGATIVE on defense every year
-                              # (Klay, dbpm<0) can't be fully rescued by a modest honor weight, and a historic-steal
-                              # season with no honor (Iverson 2001, 2.5 spg) still reads as elite — box-score irreducibles.
-    # NOTE: dws (defensive win shares) was tried here but REMOVED — being a cumulative,
-    # team-context stat it rewards big minutes on good defenses and INFLATED exactly the
-    # star offensive guards we wanted to temper. Box-score data cannot mark a high-steal,
-    # positive-dbpm guard (e.g. prime Curry/CP3) as a poor perimeter defender.
-  rim_protection:             # volume added so durable rim protectors outrank low-minute rate spikers.
-                              # NOT blocks-only: box scores miss no-foul verticality/deterrence, so a great
-                              # interior anchor who doesn't swat (Bam Adebayo) was stuck ~70s on blk_pct alone.
-                              # drb_pct adds the "ends the defensive possession" signal — it lifts true anchors
-                              # (Bam, Gobert) and tempers one-dimensional shot-blockers who don't rebound (Bol).
-    blk_pct: 0.40             # blk_percent              (credibility-shrunk on MP) — primary rim signal, weight raised
-    dbpm: 0.13                # dbpm                     (credibility-shrunk on MP) — TRIMMED from 0.21: dbpm is WHOLE-court,
-                              # so it double-counts perimeter defense (its own axis) and over-penalizes an elite shot-blocker
-                              # stuck on a poor TEAM defense (2018 Porzingis: 6.4 blk%, 2.4 bpg, but a neutral dbpm on a bad
-                              # Knicks D dragged his rim rating to 71). Weight shifted to the direct interior signals below.
-    blk_total: 0.15           # blk (season total)      (ABSOLUTE volume)
-    drb_pct: 0.16             # drb_percent              (interior possession-ending; credibility-shrunk on MP) — raised from 0.12
-    def_accolade: 0.16        # All-Defense + DPOY       (rebounding-gated to interior anchors — credits no-swat Bam)
+    ast_total: 0.31           # ast (season total)      (ABSOLUTE volume — separates GOAT creators)
+    ast_pct: 0.28             # ast_percent             (creation rate; credibility-shrunk on MP)
+    ast_security: 0.15        # ast% / tov%             (usage-fair ball security; credibility-shrunk on ast+TO)
+    creation_load: 0.18       # ast_percent x usg%      (creation under scoring load; credibility-shrunk on MP)
+    star_accolade: 0.08       # MVP share + All-Star selection (SENTIMENT — small lift for the
+                              # recognized engines; a non-passing All-Star stays low, ast% leads)
+  defense:                    # ONE defense rating (casual mode): perimeter_d + rim_protection merged.
+                              # NOT a flat sum of steal+block components — that would systematically drag
+                              # pure perimeter stoppers (their real-but-low block stats rank low; unlike a
+                              # missing component, a zero doesn't renormalize away) and vice versa. Instead
+                              # the box-score credit is a player's BEST defensive ARCHETYPE: two
+                              # sub-composites (see defense_box below) and box_best = max(perimeter,
+                              # interior), re-ranked. Payton scores via the perimeter path, Gobert via the
+                              # interior path, two-way anchors (Hakeem, Draymond) via either. def_accolade
+                              # leads on top: All-Defense/DPOY vote share is the one signal that sees both
+                              # point-of-attack containment and no-swat anchoring that box stats miss.
+    def_accolade: 0.45        # All-Defense + DPOY vote share (smoothed reputation; de-saturated rank)
+    box_best: 0.55            # max(perimeter, interior) box sub-composite, re-ranked (defense_box)
+    # NOTE: dws (defensive win shares) stays REMOVED — cumulative team-context stat that
+    # inflated exactly the star offensive guards the rating wants to temper.
+  clutch:                     # NEW (casual mode): performing when it matters — playoff production +
+                              # recorded clutch/Finals recognition. Deterministic and all-era: playoff box
+                              # scores exist back to 1947 (raw2), Finals MVP is a curated recorded fact
+                              # (1969+), Clutch POY vote shares 2023+. Rows with NO playoff appearance that
+                              # season renormalize onto clutch_accolade -> its neutral zero_rank (~low-70s
+                              # after the decade curve): honest "no evidence", not a punishment.
+    po_pts: 0.32              # playoff PPG (ERA-RELATIVE — ranked within season among playoff players)
+    po_depth: 0.18            # playoff games that season (deep runs = more games vs better opposition)
+    po_retention: 0.15        # playoff TS% minus regular-season TS% (rising vs shrinking in the moment;
+                              # credibility-shrunk on playoff FGA so a hot 4-game sample can't spike)
+    clutch_accolade: 0.35     # Finals MVP (curated) + MVP share (small) + Clutch POY share (2023+),
+                              # smoothed (rings echo) + de-saturated rank
   rebounding:                 # volume added (§5 override) so high-minute anchors aren't outranked by
                               # low-minute rate compilers (cf. shooting); trb% still the primary signal
     trb_pct: 0.40             # trb_percent              (credibility-shrunk on MP)
@@ -145,7 +177,8 @@ credibility:
   trb_pct:      { volume: mp,          K: 300 }   # rebound rates backed by minutes
   oreb_pct:     { volume: mp,          K: 300 }
   dreb_pct:     { volume: mp,          K: 300 }
-  drb_pct:      { volume: mp,          K: 300 }   # rim_protection's defensive-rebound signal (same backing as dreb_pct)
+  drb_pct:      { volume: mp,          K: 300 }   # defense's defensive-rebound signal (same backing as dreb_pct)
+  po_retention: { volume: po_fga,      K: 150 }   # playoff TS lift backed by playoff shot volume
 
 # --- scoring-volume efficiency guardrails (§7): a scoring-VOLUME component is multiplied by
 # an efficiency gate g = clip((eff - (season_mean_eff - band)) / band, gmin, 1) so volume only
@@ -181,16 +214,6 @@ mid_range:
   min_attempts: 20            # require real mid-range VOLUME — below this the shrunk-to-mean value ranks
                               # ~mid and would falsely credit a dunker who took 1-2 mid-range shots
 
-# --- §7 perimeter_d decoupling: dbpm is WHOLE-court defensive box +/-, so high-block rim anchors
-# (Robinson, Ewing, Hakeem) leaked in as elite PERIMETER defenders. Discount each player's dbpm credit
-# in perimeter_d by a block-rate gate g = clip((blk_hi - blk%)/(blk_hi - blk_lo), gmin, 1): full credit
-# at/below blk_lo (true perimeter players — Payton/Pippen/Kawhi unaffected), ramping to gmin at blk_hi
-# (rim protectors). Steal components are untouched — steals are genuine perimeter events.
-perimeter_gate:
-  blk_lo: 2.0                 # blk% at/below which dbpm gets full perimeter credit
-  blk_hi: 5.0                 # blk% at/above which dbpm credit is floored to gmin
-  gmin: 0.20
-
 # --- §7 defensive-accolade signal: All-Defense VOTE SHARE + DPOY vote share, ingested in 01_ingest
 # into a per-(player,season) `def_accolade` value = all_def_share + dpoy_share. This is the one
 # NON-box-score signal in the pipeline — it exists because no box-score stat can measure on-ball
@@ -209,6 +232,10 @@ defensive_accolade:
                              # point-of-attack stopper (Dillon Brooks 2025, 0.035 = 7 voting pts) is genuine
                              # recognition the box score can't see, not noise — a 0.10 cliff wrongly dropped it.
   dpoy_share: 1.0            # multiplier on DPOY vote share (0-1) added on top
+  retro_curated: true        # pre-1969 (no voting data): merge data/curated/retro_defense.csv —
+                             # a short recorded-basis list (Russell, Thurmond, Wilt...) so the
+                             # era's famous anchors aren't stuck at the neutral baseline.
+                             # false -> pure "neutral unknown" for all pre-voting seasons.
   smooth:                    # defensive recognition is a REPUTATION that persists, not a one-season blip:
     window: 2                # a season inherits recognition from up to N prior seasons (trailing; no future leak)
     decay: 0.6               # per-season decay of inherited recognition (0.6 -> 36% two years on)
@@ -219,14 +246,60 @@ defensive_accolade:
                              # [honored_floor, 100] by magnitude; non-honored sit at the neutral `zero_rank`.
                              # First-Team now separates from fringe; box-only defenders (Iverson) ride other comps.
 
-# --- §7 rim accolade routing: the accolade is position-blind, so route its rim_protection credit to
-# INTERIOR defenders by defensive-rebound rate (NOT block rate — that would exclude no-swat anchors
-# like Bam). Full credit for big-man drb%, floored to gmin for perimeter players (a guard's
-# All-Defense honor feeds his perimeter_d, not his rim_protection).
-rim_accolade_gate:
-  drb_lo: 12.0               # drb% at/below which accolade gives ~gmin rim credit (guards)
-  drb_hi: 22.0               # drb% at/above which accolade gives full rim credit (interior anchors)
-  gmin: 0.20
+# --- §7 defense box-score archetypes: the two sub-composites behind defense.box_best.
+# Each is a weighted average of component percentile ranks (credibility-shrunk upstream);
+# a player's box credit is the MAX of the two, re-ranked across the universe — so both
+# defender archetypes are rewarded on the stats that actually describe their job.
+defense_box:
+  perimeter:                  # ball pressure / point-of-attack
+    stl_pct: 0.40             # steal rate               (credibility-shrunk on MP)
+    stl_total: 0.20           # per-game steals          (ABSOLUTE volume)
+    dbpm: 0.40                # whole-court box +/-      (credibility-shrunk on MP)
+  interior:                   # rim protection / possession-ending
+    blk_pct: 0.40             # block rate               (credibility-shrunk on MP)
+    blk_total: 0.15           # per-game blocks          (ABSOLUTE volume)
+    drb_pct: 0.20             # defensive-rebound rate   (credits no-swat anchors like Bam)
+    dbpm: 0.25                # whole-court box +/-      (credibility-shrunk on MP)
+
+# --- §7 clutch signal (01b_playoffs + 01_ingest): playoff aggregates joined from the
+# raw2 box-score dataset by normalized name + season (>= min_match_rate or the build
+# fails loudly — extend pipeline/id_overrides.csv), plus the recorded-recognition
+# accolade: Finals MVP (data/curated/finals_mvp.csv — recorded public fact, checked in),
+# a small MVP-share echo, and the Clutch Player of the Year vote share (2023+).
+clutch:
+  enabled: true
+  min_match_rate: 0.98       # playoff-row id-join coverage the build must reach
+  finals_mvp_weight: 1.0     # Finals MVP (share 1.0 in the curated file)
+  mvp_weight: 0.25           # small MVP-share echo (the perceived "carry" factor)
+  clutch_poy_weight: 0.75    # 'nba clutch_poy' vote share (2023+)
+  smooth:                    # a ring's aura persists a few seasons
+    window: 3
+    decay: 0.7
+  desaturate:
+    enabled: true
+    zero_rank: 38            # never-honored (and no-playoff) seasons sit here — neutral, not punished
+    honored_floor: 72
+
+# --- §7 offensive-accolade "sentiment" signals: recorded MVP / All-NBA vote shares,
+# All-Star selections, and the scoring title, blended per-ability (NOT a global multiplier —
+# that would inflate a star's weak skills too). This is the casual-perception corrector:
+# a signature-skill legend (Shaq scoring, prime Iverson) should never read jarringly low
+# just because the box-score mix underweights what fans remember. Deterministic: recorded
+# voting data only, same pattern (share + smoothing + desaturated rank) as def_accolade.
+offensive_accolade:
+  enabled: true
+  mvp_weight: 1.0            # MVP vote share (1956+)
+  all_nba_weight: 0.5        # All-NBA vote share (1963+) — broader star recognition
+  all_nba_min_share: 0.02    # ignore trivial 1-2 voter blips (same rationale as All-Defense)
+  scoring_title_weight: 0.5  # season PPG leader (computed from the data; >=40 games)
+  all_star_weight: 0.25      # All-Star selection (binary, 1951+) — feeds star_accolade only
+  smooth:                    # star perception persists across adjacent seasons
+    window: 2
+    decay: 0.6
+  desaturate:                # same saturation problem as def_accolade: honored seasons are
+    enabled: true            # sparse, so rank them among themselves across [floor, 100] and
+    zero_rank: 40            # park un-honored seasons at a neutral baseline.
+    honored_floor: 72
 
 # --- era normalization: these ratings rank each component WITHIN season instead of across the
 # whole cross-era universe, so a player is judged vs his own-year peers (pace/era neutral) —
@@ -258,8 +331,31 @@ qa:
   top_k: 40                   # check the expected names land within the top-K player-seasons
   expect_top:
     rebounding: ["Dennis Rodman", "Andre Drummond", "Dwight Howard"]
-    rim_protection: ["Hakeem Olajuwon", "Dikembe Mutombo", "Mark Eaton", "Rudy Gobert", "Victor Wembanyama"]
+    defense: ["Hakeem Olajuwon", "Gary Payton", "Ben Wallace", "Dennis Rodman", "Rudy Gobert", "Kawhi Leonard", "Dikembe Mutombo", "Draymond Green"]
+    clutch: ["Michael Jordan", "LeBron James", "Kawhi Leonard", "Magic Johnson", "Hakeem Olajuwon", "Kobe Bryant", "Shaquille O'Neal", "Jerry West"]
     shooting: ["Stephen Curry", "Klay Thompson", "Ray Allen", "Kyle Korver", "Steve Nash"]
     playmaking: ["John Stockton", "Magic Johnson", "Steve Nash", "Chris Paul", "LeBron James", "Nikola Jokić"]
-    perimeter_d: ["Gary Payton", "Scottie Pippen", "Michael Jordan", "Kawhi Leonard", "Tony Allen"]
-    scoring: ["Michael Jordan", "Kevin Durant", "Karl Malone", "Giannis Antetokounmpo", "Shai Gilgeous-Alexander", "Adrian Dantley"]
+    scoring: ["Michael Jordan", "Kevin Durant", "Karl Malone", "Giannis Antetokounmpo", "Shai Gilgeous-Alexander", "Shaquille O'Neal", "Kobe Bryant", "Allen Iverson"]
+  # signature-skill floors (sentiment regression): a legend's SIGNATURE ability must clear
+  # this minimum in his best DECADE-GRAIN entry — the direct encoding of "a casual should
+  # never see a jarringly low number on the skill the player is famous for".
+  signature_floor:
+    - ["Shaquille O'Neal", "scoring", 95]
+    - ["Kobe Bryant", "scoring", 95]
+    - ["Allen Iverson", "scoring", 93]
+    - ["Larry Bird", "shooting", 88]   # pre-volume-3pt era: 89 is his honest ceiling here
+    - ["Magic Johnson", "playmaking", 95]
+    - ["Dennis Rodman", "rebounding", 97]
+    - ["Michael Jordan", "scoring", 98]
+    - ["Stephen Curry", "shooting", 98]
+    - ["LeBron James", "scoring", 96]
+    - ["Kevin Durant", "scoring", 96]
+    - ["Tim Duncan", "defense", 92]
+    - ["Hakeem Olajuwon", "defense", 96]
+    - ["Gary Payton", "defense", 92]
+    - ["Michael Jordan", "clutch", 97]
+    - ["LeBron James", "clutch", 96]
+    - ["Wilt Chamberlain", "scoring", 97]
+    - ["Bill Russell", "defense", 94]
+    - ["Bill Russell", "rebounding", 95]
+    - ["Jerry West", "clutch", 93]

@@ -18,8 +18,8 @@ const ABILITY_SYNONYMS = {
   shooting: ['three-point shooting', 'three point shooting', '3-point shooting', '3pt shooting', 'outside shooting', 'jump shooting', 'sharpshooting', 'sharpshooter', 'marksman', 'three-point', '3-point', 'shooting', 'shooters', 'shooter', 'spacing', '3pt'],
   scoring: ['bucket getter', 'bucket-getter', 'point-scoring', 'scoring', 'scorers', 'scorer', 'buckets', 'points'],
   playmaking: ['floor general', 'court vision', 'playmaking', 'playmakers', 'playmaker', 'facilitator', 'passing', 'passers', 'passer', 'assists', 'assist', 'dimes'],
-  perimeter_d: ['perimeter defense', 'perimeter defender', 'on-ball defense', 'on ball defense', 'on-ball defender', 'wing defender', 'wing defense', 'lockdown defender', 'perimeter d', 'perimeter', 'steals', 'steal'],
-  rim_protection: ['rim protection', 'rim protector', 'interior defense', 'interior defender', 'shot blocking', 'shot-blocking', 'shot blocker', 'paint protector', 'rim defense', 'rim protect', 'blocks', 'block'],
+  defense: ['perimeter defense', 'perimeter defender', 'on-ball defense', 'on ball defense', 'on-ball defender', 'wing defender', 'wing defense', 'lockdown defender', 'rim protection', 'rim protector', 'interior defense', 'interior defender', 'shot blocking', 'shot-blocking', 'shot blocker', 'paint protector', 'rim defense', 'defense', 'defenders', 'defender', 'stopper', 'steals', 'steal', 'blocks', 'block'],
+  clutch: ['clutch gene', 'big shot', 'big-shot', 'closer', 'dagger', 'playoff riser', 'playoff performer', 'clutch'],
   rebounding: ['rebounding', 'rebounders', 'rebounder', 'rebounds', 'rebound', 'boards', 'glass'],
 }
 
@@ -72,8 +72,11 @@ export function buildFilterContext(game) {
 // Decorate the player list with the fields the filters need (season, parsed once from the id).
 export function indexPlayers(game) {
   return game.players.map((p) => {
-    const parts = p.id.split('_') // "abdelal01_1992_POR" -> [slug, season, franchise]
-    return { ...p, _season: Number(parts[parts.length - 2]) }
+    // "abdelal01_1992_POR" -> season 1992; decade grain "jordami01_1990s_CHI" -> 1990
+    // (parseInt drops the trailing "s", so year filters keep working on decade data —
+    // a decade entry matches by its start year / decade bucket).
+    const parts = p.id.split('_')
+    return { ...p, _season: parseInt(parts[parts.length - 2], 10) }
   })
 }
 

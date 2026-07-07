@@ -33,7 +33,7 @@ function BrandIcon({ name }) {
   )
 }
 
-export default function ShareModal({ game, state, percentile, comp, tag, message, url, total, onClose }) {
+export default function ShareModal({ game, state, comp, tag, message, url, total, onClose }) {
   const cardRef = useRef(null)
   const { saveImage, saving } = useShareActions(cardRef, message, `six-spins-${total}.png`)
   const [copied, setCopied] = useState(false)
@@ -93,7 +93,7 @@ export default function ShareModal({ game, state, percentile, comp, tag, message
       {/* Off-screen image source — forced LIGHT so the exported PNG is always the clean
           light card, regardless of the app's theme. */}
       <div className="share-card-holder" data-theme="light" aria-hidden="true">
-        <ResultCard ref={cardRef} game={game} state={state} percentile={percentile} comp={comp} tag={tag} />
+        <ResultCard ref={cardRef} game={game} state={state} comp={comp} tag={tag} />
       </div>
     </div>,
     document.body

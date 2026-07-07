@@ -7,7 +7,7 @@ const STEPS = [
   { Icon: Shuffle, t: 'Spin', d: 'Land on a random all-time roster.' },
   { Icon: Hand, t: 'Steal', d: 'Draft one skill from one player.' },
   { Icon: LayoutGrid, t: 'Build', d: 'Fill all six skill slots.' },
-  { Icon: Trophy, t: 'Rank', d: 'See where your GOAT lands all-time.' },
+  { Icon: Trophy, t: 'Rate', d: 'The higher your picks, the higher your OVR.' },
 ]
 
 export default function HowToPlay({ onClose }) {
@@ -19,7 +19,7 @@ export default function HowToPlay({ onClose }) {
         <div className="howto__hero">
           <div className="howto__logo" aria-hidden="true">6️⃣🔄</div>
           <h2 className="howto__title">Six Spins</h2>
-          <p className="howto__tagline">Steal a skill from six all-time NBA players and build the GOAT.</p>
+          <p className="howto__tagline">Steal one skill from each of six all-time NBA players and build a 99 OVR player.</p>
         </div>
 
         <ol className="howto__steps">

@@ -47,7 +47,8 @@ describe.runIf(haveReal)('integration — real data contract (grid pool)', () =>
 
   const parseCell = (key) => {
     const i = key.indexOf('_')
-    return { season: Number(key.slice(0, i)), franchise: key.slice(i + 1) }
+    // opaque time-axis token (int season or decade label), kept as a string
+    return { season: key.slice(0, i), franchise: key.slice(i + 1) }
   }
 
   it('passes schema validation with zero errors', () => {
@@ -75,14 +76,15 @@ describe.runIf(haveReal)('integration — real data contract (grid pool)', () =>
     expect(Math.max(...byFr.values())).toBeGreaterThanOrEqual(2)
   })
 
-  it('traded players appear as separate per-team entries with their own ratings', () => {
-    const byPlayerSeason = new Map()
+  it('players who changed teams appear as separate per-franchise entries with their own ratings', () => {
+    const byPlayerTime = new Map()
     for (const p of data.players) {
-      const k = `${p.player_id}_${p.season}`
-      byPlayerSeason.set(k, (byPlayerSeason.get(k) || 0) + 1)
+      // id = "<slug>_<timeToken>_<franchise>" — count entries per (player, time token)
+      const k = p.id.slice(0, p.id.lastIndexOf('_'))
+      byPlayerTime.set(k, (byPlayerTime.get(k) || 0) + 1)
     }
-    const traded = [...byPlayerSeason.values()].filter((n) => n > 1).length
-    expect(traded).toBeGreaterThan(0) // team_split is in effect
+    const moved = [...byPlayerTime.values()].filter((n) => n > 1).length
+    expect(moved).toBeGreaterThan(0) // per-franchise split is in effect
   })
 
   it('drives a full legal game across grid cells and produces a valid result', () => {
