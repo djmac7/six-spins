@@ -469,15 +469,16 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 @keyframes slam { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
 /* the OVR is the hero of the slam — one big 2K-style number with a small OVERALL label
    stacked beneath. Gold-shimmers at 96+ (tc-goat). */
-.pct-slam__ovr { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+/* OVR number with a small "OVR" label to the SIDE (2K card style) */
+.pct-slam__ovr { display: inline-flex; flex-direction: row; align-items: center; gap: 10px; }
 .pct-slam__num {
   font-size: 140px; font-weight: 900; line-height: 1.04; letter-spacing: -0.05em;
-  padding: 0 6px; color: var(--tier-color, var(--text)); font-variant-numeric: tabular-nums;
+  padding-left: 6px; color: var(--tier-color, var(--text)); font-variant-numeric: tabular-nums;
   text-shadow: 0 6px 22px color-mix(in srgb, var(--tier-color, #000) 22%, transparent);
 }
 .pct-slam__ovrlabel {
-  font-size: 15px; font-weight: 800; letter-spacing: 0.42em; text-transform: uppercase;
-  color: var(--muted); padding-left: 0.42em; /* optical-center the tracked caps */
+  font-size: 22px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); align-self: center;
 }
 /* the OVR tier (Superstar, All-Star…) as a colored badge — used on the shareable card */
 .pct-slam__gradebadge {

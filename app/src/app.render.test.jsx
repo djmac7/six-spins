@@ -117,8 +117,8 @@ describe('Reveal + Result screens render without crashing', () => {
     // at the tally: the grade slams and the card folds together (advance well past the count-up)
     await act(async () => { vi.advanceTimersByTime(4000) })
     expect(container.querySelector('.pct-slam')).toBeTruthy()
-    // OVR is the hero and the only headline (curved from total 435 -> 70)
-    expect(container.querySelector('.pct-slam__num').textContent).toBe('70')
+    // OVR is the hero and the only headline (curved from total 435 -> 69)
+    expect(container.querySelector('.pct-slam__num').textContent).toBe('69')
     expect(container.querySelector('.reveal-team.collapsed')).toBeTruthy()
     // toggle re-opens the team card
     await act(async () => { container.querySelector('.reveal-team__toggle').click() })

@@ -117,7 +117,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
           {/* the OVR is the hero — a single 2K-style overall, nothing else */}
           <div className="pct-slam__ovr">
             <span className="pct-slam__num">{ovr}</span>
-            <span className="pct-slam__ovrlabel">Overall</span>
+            <span className="pct-slam__ovrlabel">OVR</span>
           </div>
 
           {/* Play Again is the main CTA, right under the score (above the fold). Share opens

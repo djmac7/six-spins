@@ -44,8 +44,10 @@ export function ratingTier(v) {
 // averages > 98) that a linear avg makes 99 nearly unreachable. Instead the OVR is a CURVED
 // map of the total that anchors 99 to a STRONG-but-imperfect card — a total ~592 (five 99s
 // + a 97, say), which a good player reaches in ~30-45 min — and scales down from there.
-// Calibrated against simulated play (see pipeline sim). Clamped to [40, 99].
-const OVR_ANCHOR_TOTAL = 592 // total that maps to a 99 OVR
+// Calibrated against simulated play (see pipeline sim): a good player lands a 99 in ~4-5
+// games (~6 min), a casual in ~10 (~13 min) — attainable in a sitting, still not every game.
+// Clamped to [40, 99].
+const OVR_ANCHOR_TOTAL = 584 // total that maps to a 99 OVR
 const OVR_LO_TOTAL = 480     // total that maps to OVR_LO
 const OVR_LO = 78
 const OVR_SLOPE = (99 - OVR_LO) / (OVR_ANCHOR_TOTAL - OVR_LO_TOTAL)
