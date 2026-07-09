@@ -43,11 +43,11 @@ export function ratingTier(v) {
 // NOT a raw average: the top of the average is so compressed (even a great card rarely
 // averages > 98) that a linear avg makes 99 nearly unreachable. Instead the OVR is a CURVED
 // map of the total that anchors 99 to a STRONG-but-imperfect card — a total ~592 (five 99s
-// + a 97, say), which a good player reaches in ~30-45 min — and scales down from there.
-// Calibrated against simulated play (see pipeline sim): a good player lands a 99 in ~3-4
-// games, a casual in ~7 — easily attainable in a sitting. Clamped to [40, 99].
-const OVR_ANCHOR_TOTAL = 580 // total that maps to a 99 OVR
-const OVR_LO_TOTAL = 480     // total that maps to OVR_LO
+// + a 97, say), which only a near-flawless roster reaches — and scales down from there.
+// Tuned to be demanding: a 99 now takes six 98/99-caliber picks, so most strong games land
+// in the low-90s and the GOAT tier is a genuine chase, not a given. Clamped to [40, 99].
+const OVR_ANCHOR_TOTAL = 588 // total that maps to a 99 OVR (near-max; 594 is a perfect 6x99)
+const OVR_LO_TOTAL = 470     // total that maps to OVR_LO
 const OVR_LO = 78
 const OVR_SLOPE = (99 - OVR_LO) / (OVR_ANCHOR_TOTAL - OVR_LO_TOTAL)
 export function computeOvr(total) {
