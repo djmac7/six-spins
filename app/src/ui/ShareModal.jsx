@@ -16,18 +16,22 @@ const ICONS = {
 
 // 82-0-style share sheet (modal, not a separate screen): card preview, the copy-paste
 // message, the deep link, a grid of social targets, and copy-link / save-image.
+// Each target gets the FULL payload (message with the challenge link inline) wherever it
+// accepts free text, so the composer opens pre-populated with both — no target relies on a
+// separate url param surviving.
 const SOCIALS = [
-  { key: 'x', name: 'X', bg: '#0f1419', href: (t, u) => `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
-  { key: 'fb', name: 'Facebook', bg: '#1877f2', href: (t, u) => `https://www.facebook.com/sharer/sharer.php?u=${u}&quote=${t}` },
+  { key: 'x', name: 'X', bg: '#0f1419', href: ({ tFull }) => `https://twitter.com/intent/tweet?text=${tFull}` },
+  // Facebook's sharer only takes the URL (quote is deprecated without a registered app);
+  // the OG preview carries the pitch there.
+  { key: 'fb', name: 'Facebook', bg: '#1877f2', href: ({ u }) => `https://www.facebook.com/sharer/sharer.php?u=${u}` },
   // Messenger's web dialog requires a registered app_id, so use the app deep link
   // (works on iOS/Android where Messenger is installed — this is a mobile-first game).
-  { key: 'ms', name: 'Messenger', bg: '#0084ff', href: (t, u) => `fb-messenger://share/?link=${u}` },
-  // api.whatsapp.com/send is more reliable than wa.me for long multi-line/emoji payloads;
-  // join message and link with a real newline so both survive into the composer.
-  { key: 'wa', name: 'WhatsApp', bg: '#25d366', href: (t, u) => `https://api.whatsapp.com/send?text=${t}%0A${u}` },
-  { key: 'tg', name: 'Telegram', bg: '#229ed9', href: (t, u) => `https://t.me/share/url?url=${u}&text=${t}` },
+  { key: 'ms', name: 'Messenger', bg: '#0084ff', href: ({ u }) => `fb-messenger://share/?link=${u}` },
+  // api.whatsapp.com/send is more reliable than wa.me for long multi-line/emoji payloads.
+  { key: 'wa', name: 'WhatsApp', bg: '#25d366', href: ({ tFull }) => `https://api.whatsapp.com/send?text=${tFull}` },
+  { key: 'tg', name: 'Telegram', bg: '#229ed9', href: ({ t, u }) => `https://t.me/share/url?url=${u}&text=${t}` },
   // Reddit titles are single-line: pass the flattened variant, not the multi-line message.
-  { key: 'rd', name: 'Reddit', bg: '#ff4500', href: (t, u, tLine) => `https://www.reddit.com/submit?url=${u}&title=${tLine}` },
+  { key: 'rd', name: 'Reddit', bg: '#ff4500', href: ({ u, tLine }) => `https://www.reddit.com/submit?url=${u}&title=${tLine}` },
 ]
 
 function BrandIcon({ name }) {
@@ -43,9 +47,12 @@ export default function ShareModal({ game, state, comp, tag, message, url, total
   const { saveImage, saving } = useShareActions(cardRef, message, `six-spins-${total}.png`)
   const [copied, setCopied] = useState(false)
 
-  const t = encodeURIComponent(message)
-  const tLine = encodeURIComponent(message.split('\n').join(' · '))
-  const u = encodeURIComponent(url)
+  const enc = {
+    t: encodeURIComponent(message),
+    tFull: encodeURIComponent(url ? `${message}\n${url}` : message),
+    tLine: encodeURIComponent(message.split('\n').join(' · ')),
+    u: encodeURIComponent(url),
+  }
   const openIntent = (href) => window.open(href, '_blank', 'noopener,noreferrer')
   async function copyLink() {
     try {
@@ -68,11 +75,6 @@ export default function ShareModal({ game, state, comp, tag, message, url, total
           <button className="share-modal__close" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
 
-        <div className="share-modal__msg">
-          <span className="share-modal__msgtext">{message}</span>
-          {url && <a className="share-modal__play" href={url} target="_blank" rel="noopener noreferrer">Play Six Spins ▸</a>}
-        </div>
-
         {url && (
           <button className="share-modal__url" onClick={copyLink} title="Copy link">
             <span className="share-modal__urltext">{url}</span>
@@ -82,7 +84,7 @@ export default function ShareModal({ game, state, comp, tag, message, url, total
 
         <div className="share-modal__socials">
           {SOCIALS.map((s) => (
-            <button key={s.key} className="social-btn" style={{ '--social': s.bg }} onClick={() => openIntent(s.href(t, u, tLine))} aria-label={`Share to ${s.name}`}>
+            <button key={s.key} className="social-btn" style={{ '--social': s.bg }} onClick={() => openIntent(s.href(enc))} aria-label={`Share to ${s.name}`}>
               <span className="social-btn__circle"><BrandIcon name={s.key} /></span>
               <span className="social-btn__label">{s.name}</span>
             </button>

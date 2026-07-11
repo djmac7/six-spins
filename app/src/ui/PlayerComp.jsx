@@ -12,6 +12,7 @@ export default function PlayerComp({ comp }) {
   const p = comp.player
   return (
     <div className="comp">
+      <div className="comp__kicker">Plays like</div>
       <div className="comp__row">
         <Avatar name={p.name} src={playerPhotoUrl(p)} color="#c9ccd2" size={46} rounded={10} />
         <div className="comp__who">

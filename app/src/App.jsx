@@ -19,14 +19,28 @@ import ArchiveScreen from './screens/ArchiveScreen.jsx'
 import BrowseScreen from './screens/BrowseScreen.jsx'
 
 // ---- session builders: a session fully describes one playable board ----
+// The era is PART OF THE SEED (a '-m' suffix for Modern Era, Classic untagged): the pool
+// filter changes which cells exist, so a board is only reproducible seed+era together.
+// Challenge links therefore force the creator's era on whoever opens them.
+const MODERN_TAG = '-m'
+function seedWithEra(era) {
+  return randomSeed() + (era === 'modern' ? MODERN_TAG : '')
+}
+export function seedEra(seed) {
+  return String(seed).endsWith(MODERN_TAG) ? 'modern' : 'all'
+}
 function dailySession(date) {
   return { mode: 'daily', date, seed: seedForDate(date), dayNumber: dayNumber(date), label: `Daily #${dayNumber(date)}` }
 }
-function unlimitedSession() {
-  return { mode: 'unlimited', date: null, seed: randomSeed(), dayNumber: null, label: 'Unlimited' }
+function unlimitedSession(era) {
+  return { mode: 'unlimited', date: null, seed: seedWithEra(era), dayNumber: null, label: 'Unlimited' }
 }
-function challengeSession(seed) {
-  return { mode: 'challenge', date: null, seed, dayNumber: null, label: 'Challenge' }
+// A 1v1 match: same seed = same six spins for both players; `goal` is the rival's OVR to
+// beat and `rivalRun` their packed six picks (both present when you arrive via a shared
+// link, absent for the match creator). rivalRun stays encoded here — decoding needs the
+// loaded game data, so the result screens unpack it (see ui/share.js decodeRun).
+function challengeSession(seed, goal = null, rivalRun = null) {
+  return { mode: 'challenge', date: null, seed, dayNumber: null, goal, rivalRun, label: 'Challenge' }
 }
 // A daily date already completed opens straight to its saved result (you can't re-roll a daily).
 function openDate(date) {
@@ -36,13 +50,16 @@ function initialNav() {
   if (typeof location !== 'undefined') {
     const p = new URLSearchParams(location.search)
     const seed = p.get('seed')
-    if (seed) return { view: 'play', session: challengeSession(seed) }
+    if (seed) {
+      const goal = parseInt(p.get('goal'), 10)
+      return { view: 'play', session: challengeSession(seed, Number.isFinite(goal) ? goal : null, p.get('run')) }
+    }
     if (DAILY_ENABLED) {
       const d = p.get('d')
       if (d && isDateStr(d)) return openDate(d)
     }
   }
-  return DAILY_ENABLED ? openDate(todayStr()) : { view: 'play', session: unlimitedSession() }
+  return DAILY_ENABLED ? openDate(todayStr()) : { view: 'play', session: unlimitedSession(savedEra()) }
 }
 
 export default function App() {
@@ -96,25 +113,34 @@ function savedEra() {
 
 function Shell({ game }) {
   const [nav, setNav] = useState(initialNav)
+  // A challenge (seed) link ALWAYS opens the intro — framed as "you've been challenged" when
+  // it carries a goal — even for returning players; nothing about the run is saved, so
+  // re-opening the same link replays the whole flow.
+  const challengedAtLoad = nav.session.mode === 'challenge' && nav.session.goal != null
+  const [howOpen, setHowOpen] = useState(() => firstVisit() || challengedAtLoad)
   const [era, setEra] = useState(savedEra)
+  // A challenge board must be played on the era its seed was created in (the '-m' tag) —
+  // the local era preference only drives games YOU start.
+  const activeEra = nav.session.mode === 'challenge' ? seedEra(nav.session.seed) : era
   const pickEra = (id) => {
     setEra(id)
     try { localStorage.setItem(ERA_KEY, id) } catch { /* private mode — fine */ }
+    // Changing era can't apply to someone else's challenge board — bail to a fresh game.
+    if (nav.session.mode === 'challenge') setNav({ view: 'play', session: unlimitedSession(id) })
   }
-  // The playable pool for the selected era; the full game object stays loaded so
+  // The playable pool for the active era; the full game object stays loaded so
   // switching eras is instant and lossless.
   const eraGame = useMemo(
-    () => filterGameByEra(game, ERAS.find((e) => e.id === era)?.seasons),
-    [game, era]
+    () => filterGameByEra(game, ERAS.find((e) => e.id === activeEra)?.seasons),
+    [game, activeEra]
   )
-  const [howOpen, setHowOpen] = useState(firstVisit)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings, updateSettings] = useSettings()
 
   const goto = useMemo(
     () => ({
       daily: () => setNav(openDate(todayStr())),
-      unlimited: () => setNav({ view: 'play', session: unlimitedSession() }),
+      unlimited: () => setNav({ view: 'play', session: unlimitedSession(savedEra()) }),
       archive: () => setNav((n) => ({ view: 'archive', session: n.session })),
       browse: () => setNav((n) => ({ view: 'browse', session: n.session })),
       playDate: (date) => setNav(openDate(date)),
@@ -128,7 +154,7 @@ function Shell({ game }) {
     <div className="app-frame">
       <ModeBar
         session={nav.session}
-        era={era}
+        era={activeEra}
         onEra={pickEra}
         dailyEnabled={DAILY_ENABLED}
         onDaily={goto.daily}
@@ -143,12 +169,17 @@ function Shell({ game }) {
       {PLAYERS_ENABLED && nav.view === 'browse' && <BrowseScreen game={eraGame} onClose={goHome} />}
 
       {nav.view === 'play' && (
-        <Game key={era + ':' + nav.session.seed} game={eraGame} session={nav.session} nav={goto} hideStats={settings.hideStats} />
+        <Game key={activeEra + ':' + nav.session.seed} game={eraGame} session={nav.session} nav={goto} hideStats={settings.hideStats} />
       )}
 
       {nav.view === 'revisit' && <Revisit game={eraGame} session={nav.session} nav={goto} />}
 
-      {howOpen && <HowToPlay onClose={() => { markHowToSeen(); setHowOpen(false) }} />}
+      {howOpen && (
+        <HowToPlay
+          challengeGoal={challengedAtLoad ? nav.session.goal : null}
+          onClose={() => { markHowToSeen(); setHowOpen(false) }}
+        />
+      )}
 
       {settingsOpen && <SettingsModal settings={settings} update={updateSettings} onClose={() => setSettingsOpen(false)} />}
     </div>
@@ -191,42 +222,56 @@ function Game({ game, session, nav, hideStats }) {
     )
   }, [state.phase, state.result, session, game])
 
+  // Pinned above every phase of a challenge run — the board AND the results.
+  const vsStrip = session.mode === 'challenge' && session.goal != null && (
+    <div className="vs-goal">⚔️ You’ve been challenged: beat {session.goal} OVR</div>
+  )
+
   if (state.phase === 'reveal') {
     return (
-      <RevealScreen
-        game={game}
-        state={state}
-        mode={session.mode}
-        session={session}
-        onPlayAgain={nav.unlimited}
-      />
+      <>
+        {vsStrip}
+        <RevealScreen
+          game={game}
+          state={state}
+          mode={session.mode}
+          session={session}
+          onPlayAgain={nav.unlimited}
+        />
+      </>
     )
   }
   if (state.phase === 'result') {
     return (
-      <ResultScreen
-        game={game}
-        state={state}
-        mode={session.mode}
-        session={session}
-        stats={stats}
-        onPlayAgain={nav.unlimited}
-        onPlayUnlimited={nav.unlimited}
-        onPlayDaily={DAILY_ENABLED ? nav.daily : undefined}
-        onOpenArchive={nav.archive}
-      />
+      <>
+        {vsStrip}
+        <ResultScreen
+          game={game}
+          state={state}
+          mode={session.mode}
+          session={session}
+          stats={stats}
+          onPlayAgain={nav.unlimited}
+          onPlayUnlimited={nav.unlimited}
+          onPlayDaily={DAILY_ENABLED ? nav.daily : undefined}
+          onOpenArchive={nav.archive}
+        />
+      </>
     )
   }
   return (
-    <GameScreen
-      game={game}
-      state={state}
-      actions={actions}
-      canRerollTeam={canRerollTeam}
-      canRerollYear={canRerollYear}
-      currentRoster={currentRoster}
-      hideStats={hideStats}
-    />
+    <>
+      {vsStrip}
+      <GameScreen
+        game={game}
+        state={state}
+        actions={actions}
+        canRerollTeam={canRerollTeam}
+        canRerollYear={canRerollYear}
+        currentRoster={currentRoster}
+        hideStats={hideStats}
+      />
+    </>
   )
 }
 

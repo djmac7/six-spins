@@ -5,9 +5,9 @@
 export const ABILITIES = [
   { key: 'shooting',       label: 'Shooting',       short: 'SHOOT' },
   { key: 'scoring',        label: 'Scoring',        short: 'SCORE' },
-  { key: 'playmaking',     label: 'Playmaking',     short: 'DIME' },
-  { key: 'defense',        label: 'Defense',        short: 'D' },
-  { key: 'rebounding',     label: 'Rebounding',     short: 'BOARDS' },
+  { key: 'playmaking',     label: 'Playmaking',     short: 'PASS' },
+  { key: 'defense',        label: 'Defense',        short: 'DEF' },
+  { key: 'rebounding',     label: 'Rebounding',     short: 'REB' },
   { key: 'clutch',         label: 'Clutch',         short: 'CLUTCH' },
 ]
 

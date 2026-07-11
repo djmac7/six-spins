@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import ResultCard from '../ui/ResultCard.jsx'
 import ShareModal from '../ui/ShareModal.jsx'
 import { findComp } from '../game/comp.js'
-import { buildShareText, shareLink } from '../ui/share.js'
+import { buildShareText, shareLink, decodeRun } from '../ui/share.js'
 import { computeOvr } from '../ui/helpers.js'
 import { nextDailyIn } from '../game/daily.js'
+import VersusShowdown from '../ui/VersusShowdown.jsx'
+import VersusVerdict from '../ui/VersusVerdict.jsx'
 
 // Used for the daily REVISIT path (a completed daily you re-open). Play Again is the main CTA;
 // Share opens the 82-0-style modal. Same ResultCard + ShareModal as the live reveal.
@@ -24,7 +26,9 @@ export default function ResultScreen({
     () => buildShareText({ ovr, slots: state.slots, comp, meta, url: '' }),
     [ovr, state.slots, comp, session]
   )
-  const shareUrl = useMemo(() => shareLink(meta), [session])
+  // Seed links carry your OVR + picks, so the recipient plays a 1v1 against THIS run —
+  // a challenged player who shares onward sends their own lineup, not the one they beat.
+  const shareUrl = useMemo(() => shareLink(meta, ovr, state.slots, game), [session, ovr, state.slots, game])
 
   return (
     <div className="screen result-screen">
@@ -33,6 +37,16 @@ export default function ResultScreen({
       </div>
 
       <ResultCard game={game} state={state} comp={comp} tag={tag} />
+
+      {session?.goal != null && (
+        <>
+          <VersusVerdict goal={session.goal} ovr={ovr} />
+          <VersusShowdown
+            game={game} slots={state.slots} goal={session.goal} ovr={ovr}
+            rivalRun={decodeRun(session.rivalRun, game, session.seed)}
+          />
+        </>
+      )}
 
       {isDaily && stats && (
         <div className="daily-status">

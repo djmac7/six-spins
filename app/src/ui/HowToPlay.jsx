@@ -10,7 +10,10 @@ const STEPS = [
   { Icon: Trophy, t: 'Rate', d: 'The higher your picks, the higher your OVR.' },
 ]
 
-export default function HowToPlay({ onClose }) {
+// `challengeGoal` switches the modal into 1v1 mode: a friend's seed link brought you here,
+// so the intro frames the game as beating their score on the exact same six spins.
+export default function HowToPlay({ onClose, challengeGoal = null }) {
+  const challenged = Number.isFinite(challengeGoal)
   return createPortal(
     <div className="howto-backdrop" onClick={onClose}>
       <div className="howto" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="How to play Six Spins">
@@ -18,8 +21,12 @@ export default function HowToPlay({ onClose }) {
 
         <div className="howto__hero">
           <div className="howto__logo" aria-hidden="true">6️⃣🔄</div>
-          <h2 className="howto__title">Six Spins</h2>
-          <p className="howto__tagline">Steal one skill from each of six all-time NBA players and build a 99 OVR player.</p>
+          <h2 className="howto__title">{challenged ? 'You’ve been challenged!' : 'Six Spins'}</h2>
+          <p className="howto__tagline">
+            {challenged
+              ? `A friend built a ${challengeGoal} OVR player on this exact board. You get the same six spins. Build a better player.`
+              : 'Steal one skill from each of six all-time NBA players and build a 99 OVR player.'}
+          </p>
         </div>
 
         <ol className="howto__steps">
@@ -34,7 +41,7 @@ export default function HowToPlay({ onClose }) {
           ))}
         </ol>
 
-        <button className="btn-primary howto__cta" onClick={onClose}>Start playing</button>
+        <button className="btn-primary howto__cta" onClick={onClose}>{challenged ? 'Accept the challenge' : 'Start playing'}</button>
       </div>
     </div>,
     document.body

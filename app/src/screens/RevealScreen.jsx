@@ -3,9 +3,10 @@ import confetti from 'canvas-confetti'
 import GoatCard from '../ui/GoatCard.jsx'
 import PlayerComp from '../ui/PlayerComp.jsx'
 import TierMeter from '../ui/TierMeter.jsx'
+import VersusShowdown from '../ui/VersusShowdown.jsx'
 import ShareModal from '../ui/ShareModal.jsx'
 import { findComp } from '../game/comp.js'
-import { buildShareText, shareLink } from '../ui/share.js'
+import { buildShareText, shareLink, decodeRun } from '../ui/share.js'
 import { computeOvr, ovrColorClass, isPerfectRun, OVR_CELEBRATE } from '../ui/helpers.js'
 
 // Final reveal (App spec §5): assemble the card, COUNT UP the six ratings in sequence,
@@ -32,7 +33,18 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
     () => buildShareText({ ovr, slots: state.slots, comp, meta, url: '' }),
     [ovr, state.slots, comp, session]
   )
-  const shareUrl = useMemo(() => shareLink(meta), [session])
+  // Seed links carry your OVR + picks, so the recipient plays a 1v1 against THIS run —
+  // a challenged player who shares onward sends their own lineup, not the one they beat.
+  const shareUrl = useMemo(() => shareLink(meta, ovr, state.slots, game), [session, ovr, state.slots, game])
+  // 1v1: the rival lineup carried by the challenge link (null unless valid — falls back to
+  // the solo breakdown + score-only verdict).
+  const rivalRun = useMemo(() => decodeRun(session?.rivalRun, game, session?.seed), [session, game])
+  const versus = session?.goal != null
+  // win/loss call, surfaced on the breakdown toggle (not as its own block under the OVR)
+  const vsWin = versus && ovr > session.goal
+  const verdict = versus
+    ? vsWin ? 'You won the challenge! 🏆' : ovr < session.goal ? 'Better luck next time.' : 'Dead tie.'
+    : null
   const cardTag = session?.label || '82-0 inspired'
   const [shareOpen, setShareOpen] = useState(false)
 
@@ -55,7 +67,21 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
   }, [])
 
   useEffect(() => {
-    if (showPct && !fired.current && ovr >= OVR_CELEBRATE) {
+    if (!showPct || fired.current) return
+    // Beating a friend's challenge ALWAYS celebrates, whatever the OVR — the win is the
+    // moment, not the number: a center burst plus two side volleys, like a buzzer-beater.
+    if (vsWin) {
+      fired.current = true
+      if (ovr >= 99) return fireGoatCelebration()
+      confetti({ particleCount: 140, spread: 90, origin: { y: 0.35 }, scalar: 1.15 })
+      const side = (x, angle) => confetti({ particleCount: 60, spread: 55, angle, origin: { x, y: 0.55 } })
+      setTimeout(() => side(0.05, 60), 280)
+      setTimeout(() => side(0.95, 120), 480)
+      return
+    }
+    // In a challenge, the confetti is FOR the win — a big score that still loses gets none.
+    if (versus) return
+    if (ovr >= OVR_CELEBRATE) {
       fired.current = true
       if (ovr >= 99) {
         return fireGoatCelebration() // a perfect 99 (GOAT) gets the full gold spectacle
@@ -63,7 +89,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
       const burst = ovr >= 94 ? 120 : 90
       confetti({ particleCount: burst, spread: 80, origin: { y: 0.4 }, scalar: 1.1 })
     }
-  }, [showPct, ovr])
+  }, [showPct, ovr, versus, vsWin])
 
   // Once scored: R = next game, S = open share. Ignore Cmd/Ctrl so reload/save still work.
   useEffect(() => {
@@ -87,12 +113,12 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
           <button className="reveal-team__toggle" onClick={() => setTeamOpen((o) => !o)} aria-expanded={teamOpen}>
             {teamOpen ? (
               <>
-                <span>Hide breakdown</span>
+                <span>{versus && rivalRun ? 'Hide head-to-head' : 'Hide breakdown'}</span>
                 <span className="reveal-team__chev" aria-hidden="true">▲</span>
               </>
             ) : (
               <>
-                <span>View your player</span>
+                <span>{versus && rivalRun ? 'View head-to-head' : 'View your player'}</span>
                 <span className="reveal-team__chev" aria-hidden="true">▼</span>
               </>
             )}
@@ -100,14 +126,24 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
         )}
         <div className="reveal-team__body">
           <div>
-            <GoatCard
-              slots={state.slots}
-              game={game}
-              runningTotal={revealCount >= 6 ? total : sumShown(state.slots, revealCount)}
-              revealCount={revealCount}
-              hideTotal={showPct}
-              ceiling={ceiling}
-            />
+            {/* 1v1 with a known rival lineup: the whole reveal plays out on the
+                head-to-head — the count-up uncovers both sides row by row, and the same
+                card stays behind the toggle after the slam. */}
+            {versus && rivalRun ? (
+              <VersusShowdown
+                game={game} slots={state.slots} rivalRun={rivalRun} goal={session.goal} ovr={ovr}
+                revealCount={showPct ? null : revealCount}
+              />
+            ) : (
+              <GoatCard
+                slots={state.slots}
+                game={game}
+                runningTotal={revealCount >= 6 ? total : sumShown(state.slots, revealCount)}
+                revealCount={revealCount}
+                hideTotal={showPct}
+                ceiling={ceiling}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -119,6 +155,12 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
             <span className="pct-slam__num">{ovr}</span>
             <span className="pct-slam__ovrlabel">OVR</span>
           </div>
+
+          {versus && (
+            <div className={'vs-call' + (vsWin ? ' vs-call--win' : ovr < session.goal ? ' vs-call--loss' : '')}>
+              {verdict}
+            </div>
+          )}
 
           {/* Play Again is the main CTA, right under the score (above the fold). Share opens
               the 82-0-style modal. */}

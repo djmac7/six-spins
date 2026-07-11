@@ -457,6 +457,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   transition: background 0.15s ease;
 }
 .reveal-team__toggle:hover { background: var(--surface3); }
+/* challenge verdict, right under the OVR: a win slams in warm gold; a loss stays quiet */
+.vs-call { font-size: 15px; font-weight: 800; letter-spacing: 0.01em; color: var(--muted); }
+.vs-call--win {
+  color: #b8860b;
+  animation: vs-won-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.vs-call--loss { color: var(--faint); }
+@keyframes vs-won-pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+.reveal-team__toggle.vs-won .reveal-team__chev { color: #1a1204; }
 .reveal-team__score { font-variant-numeric: tabular-nums; color: var(--muted); }
 .reveal-team__score b { color: var(--accent); font-weight: 900; }
 .reveal-team__slash { margin: 0 3px; color: var(--border-strong); }
@@ -570,6 +579,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- player comp ("plays like X") ---------- */
 .comp { margin: 20px auto 22px; max-width: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); }
+.comp__kicker { text-align: left; font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--faint); margin-bottom: 7px; }
 .comp__row { display: flex; align-items: center; gap: 13px; }
 .comp__who { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; gap: 1px; }
 .comp__name { font-weight: 800; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -889,6 +899,64 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .modebar__menulist button:active { background: var(--surface2); }
 .mi__name { font-size: 14px; font-weight: 700; }
 .mi__sub { font-size: 11px; color: var(--faint); }
+
+/* ---------- 1v1 (challenge-link versus) ---------- */
+/* rival's score to beat, pinned above the board on a 1v1 link — full-bleed strip
+   (same 100vw trick as .modebar: background spans the viewport, content stays centered) */
+.vs-goal {
+  display: flex; justify-content: center; padding: 7px 12px; margin-bottom: 2px;
+  width: 100vw; margin-left: calc(50% - 50vw);
+  font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
+  background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--muted);
+}
+
+/* head-to-head scoreboard + verdict on the reveal/result screens */
+.vs-result {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 16px; border-radius: 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.vs-result__scores { display: flex; align-items: center; gap: 26px; }
+.vs-result__x { color: var(--faint); display: inline-flex; }
+.vs-score { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 64px; }
+.vs-score__who { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.vs-score__num { font-size: 30px; font-weight: 900; line-height: 1.1; }
+.vs-score__ovr { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; color: var(--faint); }
+.vs-result__line { font-size: 13px; font-weight: 800; }
+.vs-result--win .vs-result__line { color: #15803d; }
+.vs-result--loss .vs-result__line { color: #b91c1c; }
+
+/* pick-by-pick head-to-head (replaces the solo breakdown in the collapsible card when the
+   challenge link carried the rival lineup). Deliberately speaks the GOAT card's language:
+   same .goat-card shell, same .slot rows, same tier-colored rating numbers. */
+.vsx-cols {
+  display: flex; justify-content: space-between; padding: 2px 12px 7px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--faint);
+}
+.vsx-slot { padding: 8px 10px; gap: 8px; }
+.vsx-slot__mid {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 0 0 44px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.06em; color: var(--muted);
+}
+.vsx-side { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vsx-side--them { flex-direction: row-reverse; text-align: right; }
+.vsx-side__who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.vsx-side__name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vsx-side__team { font-size: 9.5px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vsx-side__rating { font-size: 18px; font-weight: 900; line-height: 1; flex: 0 0 auto; }
+.vsx-side__rating.tier-goat { color: var(--t-goat); }
+.vsx-side__rating.tier-elite { color: var(--t-elite); }
+.vsx-side__rating.tier-great { color: var(--t-great); }
+.vsx-side__rating.tier-good { color: var(--t-good); }
+.vsx-side__rating.tier-mid { color: var(--t-mid); }
+.vsx-side__rating.tier-low { color: var(--t-low); }
+/* the losing side of each row recedes so the row's winner reads at a glance */
+.vsx-slot--win .vsx-side--them, .vsx-slot--loss .vsx-side:not(.vsx-side--them) { opacity: 0.55; }
+.vsx-total { justify-content: space-between; }
+/* on tight screens the team line goes — names + ratings stay */
+@media (max-width: 380px) {
+  .vsx-side__team { display: none; }
+}
 
 /* ---------- daily archive ---------- */
 .archive-screen { gap: 14px; }

@@ -5,8 +5,9 @@
 // The six tier-colored squares (one per ability, in the fixed ABILITIES order) encode the
 // SHAPE of your GOAT — strong where, weak where — WITHOUT revealing which players/team-years
 // you stole. That spoiler gap is the hook: "you went blue on defense? who'd you even get?!"
-import { ABILITIES } from '../constants.js'
-import { ratingTier, ovrTier } from './helpers.js'
+import { ABILITIES, ABILITY_KEYS } from '../constants.js'
+import { ratingTier } from './helpers.js'
+import { hashStr } from '../game/rng.js'
 
 // rating tier -> heat square. GOAT gold(🟨), then green/blue/… down to red. Distinct per tier.
 const TIER_SQUARE = { goat: '🟨', elite: '🟩', great: '🟦', good: '🟪', mid: '🟧', low: '🟥' }
@@ -29,32 +30,68 @@ export function shareDisplayUrl() {
 
 // A deep link that reproduces THIS run for whoever taps it: ?d=<date> opens that exact daily
 // (playable from the archive); ?seed=<seed> reproduces an unlimited board (challenge-a-friend).
-export function shareLink(meta) {
+// Your six picks, packed for the challenge link (&run=): each pick is (index into the
+// players table × 128 + rating), XORed with a seed-derived mask and written as 4 base36
+// chars — 24 opaque characters total. The mask keeps the lineup from being readable in the
+// URL (no spoiling the rival's picks before you've played), and decode verifies each
+// player's rating for its ability slot, so a stale/garbled link degrades to score-only
+// instead of showing a wrong lineup.
+const RUN_CHARS = 4
+const RUN_MASK = 0x7ffff // 19 bits — covers index*128+rating for the full player table
+
+const runMask = (seed, i) => hashStr(String(seed) + '|run|' + i) & RUN_MASK
+
+export function encodeRun(slots, game, seed) {
+  if (!slots || !game || slots.length !== ABILITIES.length) return ''
+  const indexById = new Map(game.players.map((p, i) => [p.id, i]))
+  let out = ''
+  for (let i = 0; i < slots.length; i++) {
+    const s = slots[i]
+    const pi = indexById.get(s?.playerId)
+    if (pi == null || !Number.isFinite(s.rating)) return ''
+    out += ((pi * 128 + s.rating) ^ runMask(seed, i)).toString(36).padStart(RUN_CHARS, '0')
+  }
+  return out
+}
+
+export function decodeRun(str, game, seed) {
+  if (!str || !game || String(str).length !== ABILITIES.length * RUN_CHARS) return null
+  const run = []
+  for (let i = 0; i < ABILITIES.length; i++) {
+    const v = parseInt(String(str).slice(i * RUN_CHARS, (i + 1) * RUN_CHARS), 36)
+    if (!Number.isFinite(v)) return null
+    const unmasked = v ^ runMask(seed, i)
+    const rating = unmasked % 128
+    const player = game.players[(unmasked - rating) / 128]
+    // integrity check: the decoded player must actually hold this rating for this ability
+    if (!player || player.ratings?.[ABILITY_KEYS[i]] !== rating) return null
+    run.push({ playerId: player.id, rating })
+  }
+  return run
+}
+
+// `goal` (your OVR) + `slots` (your picks) ride along on seed links so the recipient gets a
+// target to beat and a lineup to compare against — that's what turns a shared board into a 1v1.
+export function shareLink(meta, goal, slots, game) {
   const base = shareUrl()
   if (!base) return ''
+  const goalQs = Number.isFinite(goal) ? `&goal=${goal}` : ''
+  const run = slots && game && meta?.seed ? encodeRun(slots, game, meta.seed) : ''
+  const runQs = run ? `&run=${run}` : ''
   if (meta?.mode === 'daily' && meta.date) return `${base}?d=${meta.date}`
-  if (meta?.seed) return `${base}?seed=${encodeURIComponent(meta.seed)}`
+  if (meta?.seed) return `${base}?seed=${encodeURIComponent(meta.seed)}${goalQs}${runQs}`
   return base
 }
 
-function shareTitle(meta) {
-  if (meta?.mode === 'daily' && meta.dayNumber != null) return `SIX SPINS · Daily #${meta.dayNumber}`
-  if (meta?.mode === 'challenge') return `SIX SPINS · Challenge`
-  return `SIX SPINS 🏀`
-}
-
-export function buildShareText({ ovr, slots, comp, meta, url }) {
-  const t = ovrTier(ovr)
+// One plain sentence + the squares + the dare. The link replays THIS run (same six spins,
+// same rosters), so the share reads as a direct head-to-head, not a scoreboard flex.
+export function buildShareText({ ovr, slots, meta, url }) {
+  const where = meta?.mode === 'daily' && meta.dayNumber != null ? `today's Six Spins (Daily #${meta.dayNumber})` : 'Six Spins'
   const link = url != null ? url : shareLink(meta)
   const lines = [
-    shareTitle(meta),
-    `${ovr} OVR — ${t.head}`,
+    `I built a ${ovr} OVR NBA player on ${where} 🏀`,
     `${ratingSquares(slots)}`,
+    link ? `Can you beat my score? ${link}` : 'Can you beat my score?',
   ]
-  if (comp?.player) lines.push(`plays like ${comp.player.name} · ${comp.player.team_label}`)
-  lines.push(t.cta)
-  // The link replays THIS run — same six spins, same rosters — so the share is a
-  // head-to-head challenge, not just a scoreboard flex. Say so explicitly.
-  if (link) lines.push(`Play my exact spins ▸ ${link}`)
   return lines.join('\n')
 }
