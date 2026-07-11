@@ -904,11 +904,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* rival's score to beat, pinned above the board on a 1v1 link — full-bleed strip
    (same 100vw trick as .modebar: background spans the viewport, content stays centered) */
 .vs-goal {
-  display: flex; justify-content: center; padding: 7px 12px; margin-bottom: 2px;
+  display: flex; justify-content: center; align-items: center;
+  height: 33px; padding: 0 12px; margin-bottom: 2px;
   width: 100vw; margin-left: calc(50% - 50vw);
   font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
   background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--muted);
 }
+/* the strip eats into the viewport-locked board, so the list (and its bottom scroll-fade)
+   must end 35px higher (33px strip + 2px margin) or the fade slides below the fold */
+.vs-goal + .game-screen { height: calc(100vh - 35px); height: calc(100dvh - 35px); }
 
 /* head-to-head scoreboard + verdict on the reveal/result screens */
 .vs-result {
@@ -1041,6 +1045,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
      padding-bottom reserves room for the RevIQ sticky anchor ad so the roster list ends
      cleanly above it instead of being clipped underneath. */
   .game-screen { display: grid; grid-template-columns: clamp(300px, calc(300px + (100vw - 1200px) * 8 / 13), 380px) minmax(0, 1fr); gap: 28px; align-items: stretch; max-width: var(--frame); margin: 0 auto; width: 100%; height: 100vh; min-height: 0; padding-bottom: 84px; }
+  /* challenge strip above the board: shave its 35px off here too (this rule outranks the
+     base .vs-goal + .game-screen height) */
+  .vs-goal + .game-screen { height: calc(100vh - 35px); }
   .game-top { gap: 14px; align-self: start; }
   .game-bottom { min-height: 0; }
   /* desktop sidebar always shows the card; the mobile toggle is hidden */
