@@ -142,23 +142,24 @@ weights:
     box_best: 0.55            # max(perimeter, interior) box sub-composite, re-ranked (defense_box)
     # NOTE: dws (defensive win shares) stays REMOVED — cumulative team-context stat that
     # inflated exactly the star offensive guards the rating wants to temper.
-  clutch:                     # NEW (casual mode): performing when it matters — playoff production +
-                              # recorded clutch/Finals recognition. Deterministic and all-era: playoff box
-                              # scores exist back to 1947 (raw2), Finals MVP is a curated recorded fact
-                              # (1969+), Clutch POY vote shares 2023+. Rows with NO playoff appearance that
-                              # season renormalize onto clutch_accolade -> its neutral zero_rank (~low-70s
-                              # after the decade curve): honest "no evidence", not a punishment.
-    po_pts: 0.32              # playoff PPG (ERA-RELATIVE — ranked within season among playoff players)
-    po_depth: 0.18            # playoff games that season (deep runs = more games vs better opposition)
-    po_retention: 0.15        # playoff TS% minus regular-season TS% (rising vs shrinking in the moment;
-                              # credibility-shrunk on playoff FGA so a hot 4-game sample can't spike)
-    clutch_accolade: 0.35     # Finals MVP (curated) + MVP share (small) + Clutch POY share (2023+),
-                              # smoothed (rings echo) + de-saturated rank
+  clutch:                     # NEW (casual mode): performing when it matters. Like DEFENSE, the box
+                              # credit is a player's BEST clutch ARCHETYPE: clutch_best = max(sustained
+                              # playoff production [clutch_box below], go-ahead game-winners [01c]) —
+                              # so a dagger-hitter isn't averaged down by a dipped playoff efficiency,
+                              # and a deep-run workhorse isn't dragged by having no buzzer-beaters.
+                              # clutch_accolade (Finals MVP + Clutch POY share) leads on top. All-era:
+                              # playoff box 1947+, game-winners 1997+ (pre-PBP renormalizes away).
+    clutch_best: 0.90         # max(playoff-production sub-composite, game-winner rank), re-blended
+    clutch_accolade: 0.10     # Finals MVP (curated) + MVP share (small) + Clutch POY share (2023+).
+                              # Light: a recorded clutch honor LIFTS, but its absence must not sink a
+                              # player who demonstrably hit the daggers (Haliburton has no Finals MVP)
   rebounding:                 # volume added (§5 override) so high-minute anchors aren't outranked by
                               # low-minute rate compilers (cf. shooting); trb% still the primary signal
-    trb_pct: 0.40             # trb_percent              (credibility-shrunk on MP)
-    trb_total: 0.25           # trb (season total)      (ABSOLUTE volume)
-    oreb_pct: 0.15            # orb_percent              (credibility-shrunk on MP)
+    trb_pct: 0.42             # trb_percent              (credibility-shrunk on MP)
+    trb_total: 0.28           # trb (season total)      (ABSOLUTE volume)
+    oreb_pct: 0.10            # orb_percent              (credibility-shrunk on MP) — trimmed: over-
+                              # weighting the O-glass penalized rim-protecting bigs (Wembanyama) who
+                              # dominate total/defensive boards but don't crash offensively
     dreb_pct: 0.20            # drb_percent              (credibility-shrunk on MP)
 
 # --- §7 volume credibility: regress each rate/ratio component toward the universe mean
@@ -261,6 +262,14 @@ defense_box:
     drb_pct: 0.20             # defensive-rebound rate   (credits no-swat anchors like Bam)
     dbpm: 0.25                # whole-court box +/-      (credibility-shrunk on MP)
 
+# clutch "body of work" sub-composite (the non-game-winner archetype); max'd against the
+# game-winner rank to form clutch_best. Sustained playoff scoring leads; retention is a
+# lighter, noisier signal (a great closer's efficiency can dip on a deep, tough run).
+clutch_box:
+  po_pts: 0.60                # playoff PPG (era-relative) — sustained postseason scoring
+  po_depth: 0.25             # playoff games (deep runs vs better opposition)
+  po_retention: 0.15         # playoff TS% minus regular-season TS% (rise-in-the-moment)
+
 # --- §7 clutch signal (01b_playoffs + 01_ingest): playoff aggregates joined from the
 # raw2 box-score dataset by normalized name + season (>= min_match_rate or the build
 # fails loudly — extend pipeline/id_overrides.csv), plus the recorded-recognition
@@ -272,6 +281,17 @@ clutch:
   finals_mvp_weight: 1.0     # Finals MVP (share 1.0 in the curated file)
   mvp_weight: 0.25           # small MVP-share echo (the perceived "carry" factor)
   clutch_poy_weight: 0.75    # 'nba clutch_poy' vote share (2023+)
+  gw_playoff_mult: 20.0      # a playoff game-winner (01c) counts this many regular-season ones —
+                             # the postseason dagger is the moment fans remember (Haliburton, Dirk).
+                             # Heavy by design: playoff daggers DOMINATE regular-season volume, so a
+                             # DeRozan (25 regular, 0 playoff GW) doesn't outrank a true playoff closer.
+  gw_coverage_start: 1997    # play-by-play (raw2) starts here; PRE-1997 seasons get NO game-winner
+                             # component (NaN -> renormalizes) so pre-PBP legends aren't zero-dragged
+  gw_crown_count: 3.0        # playoff game-winners in a season for FULL clutch credit. 3-in-a-run is
+                             # near-unique (Haliburton 2025, LeBron 2007); 2-GW seasons scale to 2/3 and
+                             # fall back to the player's playoff box (trims Nazr Mohammed / Cliff Robinson)
+  gw_min_match_rate: 0.90    # soft floor on the game-winner id-join (pre-1997 has no PBP, so it's
+                             # a bonus signal, not a hard build gate like the playoff-volume join)
   smooth:                    # a ring's aura persists a few seasons
     window: 3
     decay: 0.7

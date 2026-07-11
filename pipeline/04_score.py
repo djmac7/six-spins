@@ -37,6 +37,7 @@ def _accolade_ds(cfg: dict) -> dict:
         "scoring_accolade": (cfg.get("offensive_accolade") or {}).get("desaturate") or {},
         "star_accolade": (cfg.get("offensive_accolade") or {}).get("desaturate") or {},
         "clutch_accolade": (cfg.get("clutch") or {}).get("desaturate") or {},
+        "clutch_shots": (cfg.get("clutch") or {}).get("desaturate") or {},
     }
 
 
@@ -136,6 +137,7 @@ def component_values(df: pd.DataFrame, cfg: dict) -> dict:
             "po_depth": num("po_g"),                 # playoff games (deep runs vs better opposition)
             "po_retention": num("po_ts") - num("ts_percent"),  # rise vs shrink in the playoffs
             "clutch_accolade": num("clutch_accolade"),
+            "clutch_shots": num("gw_score"),         # go-ahead game-winners (01c), playoff-weighted
         },
         "rebounding": {
             "trb_pct": num("trb_percent"),
@@ -190,6 +192,25 @@ def main():
     df["po_ppg"] = pd.to_numeric(df["po_ppg"], errors="coerce").fillna(0.0)
     df["po_fga"] = pd.to_numeric(df["po_fga"], errors="coerce").fillna(0.0)
     df["po_ts"] = pd.to_numeric(df["po_ts"], errors="coerce").fillna(reg_ts)
+
+    # game-winner signal for CLUTCH (01c_clutch): go-ahead daggers, playoff ones weighted.
+    # 0 (no game-winner that season) is a real observation -> desaturated_rank parks it at the
+    # neutral baseline; pre-1997 seasons (no PBP) also fill 0 and lean on the other components.
+    gw_path = work_path(cfg, "clutch_shots.parquet")
+    if cfg.get("clutch", {}).get("enabled") and os.path.exists(gw_path):
+        gw = pd.read_parquet(gw_path)[["player_id", "season", "gw", "gw_po"]]
+        df = df.merge(gw, on=["player_id", "season"], how="left")
+        mult = float(cfg.get("clutch", {}).get("gw_playoff_mult", 3.0))
+        df["gw_score"] = (df["gw"].fillna(0.0)
+                          + (mult - 1.0) * df["gw_po"].fillna(0.0))
+        # COVERAGE: play-by-play only exists from ~1997. A 1997+ season with no game-winner is
+        # a real 0 (ranks at the neutral baseline); a PRE-coverage season has NO data, so it must
+        # stay NaN and RENORMALIZE AWAY — else pre-PBP legends (Jerry West, Magic) get dragged to
+        # the zero-baseline on a signal that couldn't have observed them ("Mr. Clutch" -> 89 bug).
+        cov = int(cfg.get("clutch", {}).get("gw_coverage_start", 1997))
+        df.loc[pd.to_numeric(df["season"], errors="coerce") < cov, "gw_score"] = np.nan
+    else:
+        df["gw_score"] = np.nan
 
     comps = component_values(df, cfg)
 
@@ -262,10 +283,37 @@ def main():
             df["_rk_defense_interior"] = inter
             ranks = {"def_accolade": ranks["def_accolade"], "box_best": rank_df["box_best"]}
             rank_df = rank_df[["def_accolade", "box_best"]]
+        # CLUTCH: same archetype logic as defense. A player is clutch if he's elite in EITHER
+        # a sustained playoff body of work (po_pts/depth/retention) OR go-ahead game-winners —
+        # so a dagger-hitter (Haliburton: 3 playoff game-winners in one run) isn't averaged down
+        # by a dipped playoff TS%. box_best = max(playoff production, game-winner rank), then
+        # blended with the recorded accolade. clutch_shots is NaN pre-1997 -> fmax ignores it.
+        if cat == "clutch":
+            box = weighted_composite(rank_df, cfg["clutch_box"])
+            box = percentile_rank(box)
+            # SCALE the game-winner path by how many PLAYOFF daggers: 2 playoff game-winners is
+            # a near-99.9th-pctile rarity, so a 2-GW role player (Nazr Mohammed) ranks next to a
+            # historic 3-in-one-run (Haliburton 2025, LeBron 2007) and gets wrongly crowned. Scale
+            # the game-winner rank by min(1, gw_po / gw_crown_count): only a truly exceptional
+            # postseason reaches full credit; fewer daggers fall back to the player's real playoff
+            # BOX value via fmax (so Robert Horry still rates on his box, not dropped for low scoring).
+            crown = float((cfg.get("clutch") or {}).get("gw_crown_count", 3.0))
+            gw_strength = np.clip(df["gw_po"].to_numpy() / crown, 0.0, 1.0)
+            gw_gated = rank_df["clutch_shots"].to_numpy() * gw_strength
+            clutch_best = np.fmax(box, gw_gated)                  # NaN-tolerant
+            rank_df["clutch_best"] = clutch_best
+            df["_rk_clutch_box"] = box
+            ranks = {"clutch_accolade": ranks["clutch_accolade"], "clutch_best": clutch_best}
+            rank_df = rank_df[["clutch_accolade", "clutch_best"]]
         for name in ranks:
             df[f"_rk_{cat}_{name}"] = rank_df[name]
         # weighted-average -> composite (weights renormalized over present components)
         composite = weighted_composite(rank_df, weights[cat])
+        # CLUTCH: the accolade is a LIFT, never a drag. fmax against clutch_best so a proven
+        # dagger-hitter with no Finals MVP (Haliburton) keeps his full game-winner credit,
+        # while a big clutch honor can still pull a modest box up via the weighted blend.
+        if cat == "clutch":
+            composite = np.fmax(composite, rank_df["clutch_best"].to_numpy())
         # SHOOTING: confine non-3pt shooters in COMPOSITE space, BEFORE the percentile+curve.
         # A non-shooter's composite collapses to FT% (+ measured mid-range where it exists), which
         # can rank a 95%-FT non-shooter (Calvin Murphy) #1 all-time. Capping only the final rating

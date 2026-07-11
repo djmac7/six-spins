@@ -117,8 +117,8 @@ describe('Reveal + Result screens render without crashing', () => {
     // at the tally: the grade slams and the card folds together (advance well past the count-up)
     await act(async () => { vi.advanceTimersByTime(4000) })
     expect(container.querySelector('.pct-slam')).toBeTruthy()
-    // OVR is the hero and the only headline (curved from total 435 -> 69)
-    expect(container.querySelector('.pct-slam__num').textContent).toBe('69')
+    // OVR is the hero and the only headline (curved from total 435 -> 72)
+    expect(container.querySelector('.pct-slam__num').textContent).toBe('72')
     expect(container.querySelector('.reveal-team.collapsed')).toBeTruthy()
     // toggle re-opens the team card
     await act(async () => { container.querySelector('.reveal-team__toggle').click() })
@@ -131,6 +131,6 @@ describe('Reveal + Result screens render without crashing', () => {
     expect(container.querySelectorAll('.rrow')).toHaveLength(6)
     expect(screen.getByText('Play again')).toBeTruthy()
     expect(container.querySelector('.result-actions .btn-primary').textContent).toContain('Play again')
-    expect(screen.getByText('Share results')).toBeTruthy()
+    expect(screen.getByText('Challenge a friend')).toBeTruthy()
   })
 })

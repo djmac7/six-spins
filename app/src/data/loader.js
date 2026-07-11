@@ -60,6 +60,36 @@ function buildPool(pool) {
   return { cells, cellList: [...cells.keys()], bySeason, byFranchise }
 }
 
+// Narrow a loaded game to an era (a subset of the time-axis tokens). Rebuilds the grid
+// indexes over the surviving cells; everything else (players, ratings, ceiling, percentile
+// model) is shared with the full pool. `seasons: null` returns the game untouched.
+export function filterGameByEra(game, seasons) {
+  if (!seasons) return game
+  const keep = new Set(seasons.map(String))
+  const cells = new Map()
+  const bySeason = new Map()
+  const byFranchise = new Map()
+  for (const [key, roster] of game.cells) {
+    const i = key.indexOf('_')
+    const season = key.slice(0, i)
+    if (!keep.has(season)) continue
+    const fr = key.slice(i + 1)
+    cells.set(key, roster)
+    if (!bySeason.has(season)) bySeason.set(season, [])
+    bySeason.get(season).push(fr)
+    if (!byFranchise.has(fr)) byFranchise.set(fr, [])
+    byFranchise.get(fr).push(season)
+  }
+  return {
+    ...game,
+    cells,
+    cellList: [...cells.keys()],
+    bySeason,
+    byFranchise,
+    seasons: game.seasons.filter((s) => keep.has(String(s))),
+  }
+}
+
 export async function loadGameData() {
   const f = FILES[SOURCE]
   const [data, pct] = await Promise.all([getJSON(f.data), getJSON(f.pct)])

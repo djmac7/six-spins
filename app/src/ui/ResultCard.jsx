@@ -5,23 +5,23 @@ import TeamLogo from './TeamLogo.jsx'
 import PlayerComp from './PlayerComp.jsx'
 import AbilityIcon from './AbilityIcon.jsx'
 import { playerPhotoUrl } from './assets.js'
-import { ratingTier, computeOvr, ovrTier, ovrColorClass, teamDisplay } from './helpers.js'
+import { ratingTier, computeOvr, ovrTier, ovrColorClass, isPerfectRun, teamDisplay } from './helpers.js'
 import { shareDisplayUrl } from './share.js'
 
 // The shareable result card (App spec §6) — pure presentation behind a forwardRef so it can
 // be rasterized (toPng/toBlob) from wherever it's mounted, visibly OR off-screen. That's
 // what lets sharing happen inline on the reveal screen without a separate share page.
-const ResultCard = forwardRef(function ResultCard({ game, state, comp, tag = '82-0 inspired' }, ref) {
+const ResultCard = forwardRef(function ResultCard({ game, state, comp }, ref) {
   const total = state.result.total
   const ovr = computeOvr(total)
   const t = ovrTier(ovr)
   const playUrl = shareDisplayUrl()
 
   return (
-    <div className={'result-card tier-edge ' + ovrColorClass(ovr)} ref={ref}>
+    <div className={'result-card tier-edge ' + ovrColorClass(ovr) + (isPerfectRun(state.slots) ? ' perfect' : '')} ref={ref}>
       <div className="result-card__brand">
         <span className="result-card__logo">SIX <b>SPINS</b></span>
-        <span className="result-card__tag">{tag}</span>
+        <span className="result-card__emblem" aria-hidden="true">6️⃣🔄</span>
       </div>
 
       <div className="result-card__headline">

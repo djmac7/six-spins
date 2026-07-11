@@ -53,6 +53,11 @@ const OVR_SLOPE = (99 - OVR_LO) / (OVR_ANCHOR_TOTAL - OVR_LO_TOTAL)
 export function computeOvr(total) {
   return Math.max(40, Math.min(99, Math.round(99 - (OVR_ANCHOR_TOTAL - total) * OVR_SLOPE)))
 }
+// A FLAWLESS board — every one of the six attributes a 99 — gets its own rainbow flourish
+// on the reveal slam and the share card (rarer than a 99 OVR, which the curve allows at ~588).
+export function isPerfectRun(slots) {
+  return slots.length > 0 && slots.every((s) => s.rating === 99)
+}
 // OVR tier -> color class (`tc`, reused by all the tc-*/tier-bg-* CSS) + 2K-flavored label +
 // share copy. Best -> worst; a 99 is legendary, ~92+ elite, most good games land 88-95.
 // Thresholds align 1:1 with the ratingTier color bands (goat/elite/great/good/mid/low) so

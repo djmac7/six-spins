@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SlidersHorizontal, Users } from 'lucide-react'
+import { ChevronDown, SlidersHorizontal, Users } from 'lucide-react'
+import { ERAS } from '../constants.js'
 
 // Logo: the 6 + shuffle emoji (the one bit of emoji we keep — everything else is SVG icons).
 // Click = home (a fresh game).
@@ -16,10 +17,49 @@ function Logo({ as = 'div', onClick }) {
   )
 }
 
+// Era selector: a dropdown next to the logo — All-Time vs Modern Era (00s/10s/20s pool).
+// Switching restarts the current board on the new pool (App keys the Game on the era).
+function EraSelect({ era, onEra }) {
+  const [open, setOpen] = useState(false)
+  if (!onEra) return null
+  const current = ERAS.find((e) => e.id === era) || ERAS[0]
+  const pick = (id) => {
+    setOpen(false)
+    if (id !== era) onEra(id)
+  }
+  return (
+    <div className="modebar__eradrop">
+      <button
+        className="modebar__erabtn"
+        aria-label="Game era"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span>{current.label}</span>
+        <ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" />
+      </button>
+      {open && (
+        <>
+          <div className="modebar__scrim" onClick={() => setOpen(false)} />
+          <div className="modebar__menulist modebar__menulist--era" role="menu">
+            {ERAS.map((e) => (
+              <button key={e.id} role="menuitemradio" aria-checked={era === e.id} onClick={() => pick(e.id)}>
+                <span className="mi__name">{e.label}</span>
+                <span className="mi__sub">{e.seasons ? 'Seasons from the 00s, 10s & 20s' : 'The full pool, every decade'}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // Slim persistent top bar. Background spans the full viewport width (full-bleed) while the
 // content stays aligned to the app frame. Daily parked -> minimal 82-0-style header; Daily on
 // -> adds a mode pill + a Daily / Unlimited / Archive menu.
-export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlimited, onArchive, onBrowse, onOpenSettings }) {
+export default function ModeBar({ session, era, onEra, dailyEnabled = true, onDaily, onUnlimited, onArchive, onBrowse, onOpenSettings }) {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const pick = (fn) => () => { close(); fn() }
@@ -32,8 +72,7 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
   )
   const settingsBtn = (
     <button className="modebar__new" onClick={onOpenSettings} aria-label="Settings">
-      <SlidersHorizontal size={14} strokeWidth={2.2} aria-hidden="true" />
-      <span>Settings</span>
+      <SlidersHorizontal size={16} strokeWidth={2.2} aria-hidden="true" />
     </button>
   )
 
@@ -41,7 +80,10 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
     return (
       <header className="modebar">
         <div className="modebar__inner">
-          <Logo as="button" onClick={onUnlimited} />
+          <div className="modebar__left">
+            <Logo as="button" onClick={onUnlimited} />
+            <EraSelect era={era} onEra={onEra} />
+          </div>
           <div className="modebar__right">
             {browseBtn}
             {settingsBtn}
@@ -54,7 +96,10 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
   return (
     <header className="modebar">
       <div className="modebar__inner">
-        <Logo as="button" onClick={onDaily} />
+        <div className="modebar__left">
+          <Logo as="button" onClick={onDaily} />
+          <EraSelect era={era} onEra={onEra} />
+        </div>
         <div className="modebar__right">
           <span className={'modebar__mode mode-' + session.mode}>{session.label}</span>
           {settingsBtn}

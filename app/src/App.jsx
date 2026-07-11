@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { loadGameData } from './data/loader.js'
+import { loadGameData, filterGameByEra } from './data/loader.js'
+import { ERAS, DEFAULT_ERA } from './constants.js'
 import { useGame } from './game/useGame.js'
 import { makeDealer, randomSeed } from './game/rng.js'
 import { seedForDate, dayNumber, todayStr, isDateStr } from './game/daily.js'
@@ -84,8 +85,28 @@ function markHowToSeen() {
   try { sessionStorage.setItem(HOWTO_KEY, '1') } catch { /* private mode — fine */ }
 }
 
+// Era selection persists across visits (localStorage). Falls back to All-Time.
+const ERA_KEY = 'sixspins.era'
+function savedEra() {
+  try {
+    const id = localStorage.getItem(ERA_KEY)
+    return ERAS.some((e) => e.id === id) ? id : DEFAULT_ERA
+  } catch { return DEFAULT_ERA }
+}
+
 function Shell({ game }) {
   const [nav, setNav] = useState(initialNav)
+  const [era, setEra] = useState(savedEra)
+  const pickEra = (id) => {
+    setEra(id)
+    try { localStorage.setItem(ERA_KEY, id) } catch { /* private mode — fine */ }
+  }
+  // The playable pool for the selected era; the full game object stays loaded so
+  // switching eras is instant and lossless.
+  const eraGame = useMemo(
+    () => filterGameByEra(game, ERAS.find((e) => e.id === era)?.seasons),
+    [game, era]
+  )
   const [howOpen, setHowOpen] = useState(firstVisit)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings, updateSettings] = useSettings()
@@ -107,6 +128,8 @@ function Shell({ game }) {
     <div className="app-frame">
       <ModeBar
         session={nav.session}
+        era={era}
+        onEra={pickEra}
         dailyEnabled={DAILY_ENABLED}
         onDaily={goto.daily}
         onUnlimited={goto.unlimited}
@@ -115,13 +138,15 @@ function Shell({ game }) {
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
-      {nav.view === 'archive' && <ArchiveScreen game={game} onPlayDate={goto.playDate} onClose={goto.daily} />}
+      {nav.view === 'archive' && <ArchiveScreen game={eraGame} onPlayDate={goto.playDate} onClose={goto.daily} />}
 
-      {PLAYERS_ENABLED && nav.view === 'browse' && <BrowseScreen game={game} onClose={goHome} />}
+      {PLAYERS_ENABLED && nav.view === 'browse' && <BrowseScreen game={eraGame} onClose={goHome} />}
 
-      {nav.view === 'play' && <Game key={nav.session.seed} game={game} session={nav.session} nav={goto} hideStats={settings.hideStats} />}
+      {nav.view === 'play' && (
+        <Game key={era + ':' + nav.session.seed} game={eraGame} session={nav.session} nav={goto} hideStats={settings.hideStats} />
+      )}
 
-      {nav.view === 'revisit' && <Revisit game={game} session={nav.session} nav={goto} />}
+      {nav.view === 'revisit' && <Revisit game={eraGame} session={nav.session} nav={goto} />}
 
       {howOpen && <HowToPlay onClose={() => { markHowToSeen(); setHowOpen(false) }} />}
 

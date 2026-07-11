@@ -10,8 +10,8 @@ const DOCS = {
     body: (
       <>
         <p>
-          Every player in Six Spins is rated on six attributes — <b>Shooting, Scoring,
-          Playmaking, Defense, Rebounding,</b> and <b>Clutch</b> — on a 55–99 scale. The
+          Every player in Six Spins is rated on six attributes, <b>Shooting, Scoring,
+          Playmaking, Defense, Rebounding,</b> and <b>Clutch</b>, on a 55-99 scale. The
           ratings are <b>computed by a fixed formula, not hand-picked opinions</b>: the same
           math is applied to every player-season in NBA history.
         </p>
@@ -19,9 +19,9 @@ const DOCS = {
         <p>
           We start from publicly available <b>box-score and advanced stats</b> (points,
           rebounds, assists, steals, blocks, shooting splits, usage, box plus/minus, shot
-          locations where available) sourced from Basketball-Reference. We blend in
-          <b> recorded league recognition</b> — MVP, All-NBA, All-Defensive, Defensive Player
-          of the Year, All-Star, and Finals MVP voting — because some skills (point-of-attack
+          locations where available). We blend in
+          <b> recorded league recognition</b>: MVP, All-NBA, All-Defensive, Defensive Player
+          of the Year, All-Star, and Finals MVP voting, because some skills (point-of-attack
           defense, clutch shot-making) barely show up in a box score.
         </p>
         <h3>How each attribute is built</h3>
@@ -30,18 +30,18 @@ const DOCS = {
           <li>Rates are <b>era-adjusted</b> and <b>shrunk toward the league average</b> when the sample is small, so a hot 200-minute stretch doesn't outrank a full season.</li>
           <li><b>Defense</b> merges perimeter and interior impact and leans on All-Defensive/DPOY recognition for what the box score misses.</li>
           <li><b>Clutch</b> is built from playoff production (scoring, depth of runs, how efficiency holds up in the postseason) plus Finals-MVP and Clutch-Player recognition.</li>
-          <li>Your card shows a player's <b>peak</b> for that team and decade, ranked against the whole modern NBA (1960s–present).</li>
+          <li>Your card shows a player's <b>peak</b> for that team and decade, ranked against the whole modern NBA (1960s to present).</li>
         </ul>
         <h3>The honest disclaimer</h3>
         <p>
           <b>Box-score stats are not perfect, and neither are these ratings.</b> Traditional
           stats miss off-ball defense, screen-setting, spacing, gravity, leadership, and plenty
-          of other things that win games. Eras differ enormously — pace, rules, and the fact
+          of other things that win games. Eras differ enormously: pace, rules, and the fact
           that steals and blocks weren't tracked before 1974, and shot-location data doesn't
           exist before 1997. Accolade voting carries its own era and media biases.
         </p>
         <p>
-          So treat these as a <b>fun, data-driven approximation</b> — a starting point for the
+          So treat these as a <b>fun, data-driven approximation</b>: a starting point for the
           argument, not the final word. If a rating looks wrong to you, you're probably having
           exactly the debate the game is meant to start. 🐐
         </p>

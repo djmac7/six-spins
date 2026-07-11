@@ -53,6 +53,8 @@ export function buildShareText({ ovr, slots, comp, meta, url }) {
   ]
   if (comp?.player) lines.push(`plays like ${comp.player.name} · ${comp.player.team_label}`)
   lines.push(t.cta)
-  if (link) lines.push(`▸ ${link}`)
+  // The link replays THIS run — same six spins, same rosters — so the share is a
+  // head-to-head challenge, not just a scoreboard flex. Say so explicitly.
+  if (link) lines.push(`Play my exact spins ▸ ${link}`)
   return lines.join('\n')
 }

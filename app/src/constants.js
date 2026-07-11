@@ -23,6 +23,13 @@ export const STAT_LINE = [
   { key: 'bpg', label: 'BPG' },
 ]
 
+// Game eras — pool filters over the decade grid. `seasons: null` means the full pool.
+export const ERAS = [
+  { id: 'all', label: 'Classic', seasons: null },
+  { id: 'modern', label: 'Modern Era', seasons: ['2000s', '2010s', '2020s'] },
+]
+export const DEFAULT_ERA = 'all'
+
 // Pool cell key — Team and Year are independent axes; a cell is one (season, franchise).
 // Must match the keys emitted by 05_curate.py ("SEASON_FRANCHISE").
 export const cellKey = (season, franchise) => `${season}_${franchise}`
