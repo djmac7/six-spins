@@ -162,6 +162,12 @@ body {
    visible; above 1344px the frame caps at 1000px and the units fill / center. */
 .ad-rail { display: none; }
 
+/* in-flow RevIQ video unit (under the Your Player section on the game screen);
+   collapses to nothing until RevIQ injects content, so an unfilled slot adds no gap */
+.ad-video { width: 100%; }
+.ad-video:empty { display: none; }
+.ad-video > * { margin-top: 10px; }
+
 @media (min-width: 1080px) {
   .ad-rail {
     position: fixed;

@@ -77,6 +77,8 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
             hideRatings
           />
         </div>
+        {/* RevIQ video unit, right under the Your Player (selected attributes) section */}
+        <div className="ad-video" data-ad="video"></div>
       </div>
 
       <div className="game-bottom">
