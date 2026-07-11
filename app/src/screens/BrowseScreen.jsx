@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { ABILITIES, STAT_LINE } from '../constants.js'
 import { buildFilterContext, indexPlayers, parseFilters } from '../game/filterQuery.js'
 import Avatar from '../ui/Avatar.jsx'
@@ -19,9 +19,12 @@ export default function BrowseScreen({ game, onClose }) {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('ppg')
 
+  // Defer filtering so each keystroke paints immediately; the 13k-row filter + 300-card
+  // re-render happens in a lower-priority render.
+  const deferredQuery = useDeferredValue(query)
   const index = useMemo(() => indexPlayers(game), [game])
   const ctx = useMemo(() => buildFilterContext(game), [game])
-  const { filters, chips } = useMemo(() => parseFilters(query, ctx), [query, ctx])
+  const { filters, chips } = useMemo(() => parseFilters(deferredQuery, ctx), [deferredQuery, ctx])
 
   const results = useMemo(() => {
     const hits = filters.length ? index.filter((p) => filters.every((f) => f.test(p))) : index

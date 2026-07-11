@@ -21,6 +21,7 @@ export default function TeamLogo({ franchise, fallback, color = '#2a2a36', size 
         crossOrigin="anonymous"
         loading="lazy"
         decoding="async"
+        fetchPriority="low"
         width={size}
         height={size}
         onError={() => setIdx((i) => i + 1)}

@@ -107,6 +107,11 @@
     }
     </script>
 
+    <!-- Start the game-data fetch in parallel with the JS bundle instead of after React
+         mounts (loader.js reuses the preloaded response). -->
+    <link rel="preload" href="%BASE_URL%data/goat-data.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="%BASE_URL%data/percentile-table.json" as="fetch" crossorigin="anonymous" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />

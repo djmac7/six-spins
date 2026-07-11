@@ -281,8 +281,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .slot__team { font-size: 10px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slot__rating { font-size: 20px; font-weight: 900; line-height: 1; color: var(--text); flex: 0 0 auto; }
 .slot__await { font-size: 11px; color: var(--faint); font-weight: 600; }
-.slot.open { animation: pulse-border 2.8s ease-in-out infinite; }
-@keyframes pulse-border { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--border-strong); } }
+/* pulsing highlight on open slots: an overlay ring fading via opacity (compositor-only)
+   instead of animating border-color, which repainted the card every frame */
+.slot.open::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  border: 1px dashed var(--border-strong);
+  animation: pulse-ring 2.8s ease-in-out infinite;
+}
+@keyframes pulse-ring { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .slot.open::after { animation: none; display: none; } }
 .slot.just-locked { animation: slot-pop 0.45s ease; }
 @keyframes slot-pop { 0% { transform: scale(1); } 35% { transform: scale(1.05); box-shadow: 0 0 0 2px var(--accent); } 100% { transform: scale(1); } }
 .slot.shown .slot__rating { animation: rating-in 0.3s ease both; }
@@ -359,10 +366,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .roster__banner::before {
   content: ""; position: absolute; top: -20%; bottom: -20%; left: -55%; width: 38%;
   background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%);
-  transform: skewX(-18deg); pointer-events: none;
+  transform: skewX(-18deg); pointer-events: none; will-change: transform;
   animation: banner-shimmer 5.5s ease-in-out infinite;
 }
-@keyframes banner-shimmer { 0% { left: -55%; } 45%, 100% { left: 135%; } }
+/* animate transform, not `left` — moving `left` re-layouts the banner every frame */
+@keyframes banner-shimmer {
+  0% { transform: translateX(0) skewX(-18deg); }
+  45%, 100% { transform: translateX(500%) skewX(-18deg); }
+}
 .roster__banner > * { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) { .roster__banner::before { animation: none; display: none; } }
 .roster__crest { width: 48px; height: 48px; flex: 0 0 auto; padding: 4px; background: rgba(255, 255, 255, 0.95); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
@@ -555,13 +566,27 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .result-card.perfect .result-card__total { animation: none; }
 }
 .pct-slam__actions { display: flex; flex-direction: column; gap: 8px; max-width: 300px; margin: 28px auto 0; }
-/* draw attention to Play again with a gentle pulse + glow ring */
-.pct-slam__actions .btn-primary { animation: cta-pulse 1.7s ease-in-out infinite; }
+/* draw attention to Play again with a gentle pulse + glow ring.
+   The glow ring is a pseudo-element animating transform+opacity (compositor-only) —
+   animating box-shadow spread on the button itself repainted every frame. */
+.pct-slam__actions .btn-primary { position: relative; animation: cta-pulse 1.7s ease-in-out infinite; }
 @keyframes cta-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
-  50% { transform: scale(1.025); box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent) 0%, transparent); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
 }
-@media (prefers-reduced-motion: reduce) { .pct-slam__actions .btn-primary { animation: none; } }
+.pct-slam__actions .btn-primary::after {
+  content: ""; position: absolute; inset: -2px; border-radius: 10px; pointer-events: none;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: cta-ring 1.7s ease-in-out infinite; will-change: transform, opacity;
+}
+@keyframes cta-ring {
+  0%, 100% { opacity: 1; transform: scale(0.99); }
+  50% { opacity: 0; transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pct-slam__actions .btn-primary { animation: none; }
+  .pct-slam__actions .btn-primary::after { animation: none; display: none; }
+}
 
 /* ---------- gamified tier ladder ---------- */
 .tiermeter { margin: 14px auto 4px; max-width: 300px; }
@@ -1133,7 +1158,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .browse-empty { text-align: center; color: var(--muted); font-weight: 600; padding: 28px 12px; }
 
 /* browse card: avatar+name / per-game stats / rating strip — stacked at every width */
-.pcard--browse { grid-template-columns: auto 1fr; grid-template-areas: "ava id" "stats stats" "rates rates"; align-items: center; cursor: default; gap: 9px 11px; }
+.pcard--browse { grid-template-columns: auto 1fr; grid-template-areas: "ava id" "stats stats" "rates rates"; align-items: center; cursor: default; gap: 9px 11px; content-visibility: auto; contain-intrinsic-size: auto 150px; }
 .pcard--browse .pcard__stats { grid-area: stats; max-width: none; border-top: 1px solid var(--border); padding-top: 8px; }
 .pcard__rates { grid-area: rates; display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; border-top: 1px solid var(--border); padding-top: 8px; }
 .rate { display: flex; align-items: center; justify-content: center; gap: 3px; padding: 4px 2px; border-radius: 7px; background: var(--surface2); }

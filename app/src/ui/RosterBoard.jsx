@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ABILITY_META, STAT_LINE } from '../constants.js'
 import Avatar from './Avatar.jsx'
@@ -29,11 +29,11 @@ export default function RosterBoard({ team, players, openAbilities, onAssign, hi
   const textColor = readableText(team.color)
   // blind mode: force a name sort so the order can't leak the hidden stats
   const effSort = hideStats ? 'az' : sort
-  const ordered = [...players].sort((a, b) =>
+  const ordered = useMemo(() => [...players].sort((a, b) =>
     effSort === 'az'
       ? lastName(a.name).localeCompare(lastName(b.name)) || (a.name || '').localeCompare(b.name || '')
       : (b.stats?.[effSort] ?? 0) - (a.stats?.[effSort] ?? 0)
-  )
+  ), [players, effSort])
 
   // Re-sorting reshuffles the list, so drop the keyboard cursor rather than point it at a
   // now-unrelated row.
