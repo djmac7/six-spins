@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
-import { Share2 } from 'lucide-react'
 import GoatCard from '../ui/GoatCard.jsx'
 import PlayerComp from '../ui/PlayerComp.jsx'
 import TierMeter from '../ui/TierMeter.jsx'
 import ShareModal from '../ui/ShareModal.jsx'
 import { findComp } from '../game/comp.js'
 import { buildShareText, shareLink } from '../ui/share.js'
-import { computeOvr, ovrColorClass, OVR_CELEBRATE } from '../ui/helpers.js'
+import { computeOvr, ovrColorClass, isPerfectRun, OVR_CELEBRATE } from '../ui/helpers.js'
 
 // Final reveal (App spec §5): assemble the card, COUNT UP the six ratings in sequence,
 // hard pause, then SLAM the percentile as the climax with the ceiling as context.
@@ -22,6 +21,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
   // 2K-style OVERALL rating (avg of the six attributes, capped 99) — the headline hook.
   const ovr = computeOvr(total)
   const colorClass = ovrColorClass(ovr) // color the OVR like an attribute of the same value
+  const perfect = isPerfectRun(state.slots) // all six attributes 99 → rainbow glimmer
 
   const comp = useMemo(() => findComp(game.players, state.slots), [game.players, state.slots])
 
@@ -113,7 +113,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
       </div>
 
       {showPct && (
-        <div className={'pct-slam grade-slam ' + colorClass}>
+        <div className={'pct-slam grade-slam ' + colorClass + (perfect ? ' perfect' : '')}>
           {/* the OVR is the hero — a single 2K-style overall, nothing else */}
           <div className="pct-slam__ovr">
             <span className="pct-slam__num">{ovr}</span>
@@ -127,7 +127,7 @@ export default function RevealScreen({ game, state, mode = 'unlimited', session,
               {mode === 'daily' ? 'Play Unlimited' : 'Play again'} <kbd className="kbd">R</kbd>
             </button>
             <button className="btn-secondary" onClick={() => setShareOpen(true)}>
-              <Share2 size={17} />Share results <kbd className="kbd">S</kbd>
+              Challenge a friend <kbd className="kbd">S</kbd>
             </button>
           </div>
 

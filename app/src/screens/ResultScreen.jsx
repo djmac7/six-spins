@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Share2 } from 'lucide-react'
 import ResultCard from '../ui/ResultCard.jsx'
 import ShareModal from '../ui/ShareModal.jsx'
 import { findComp } from '../game/comp.js'
@@ -52,7 +51,7 @@ export default function ResultScreen({
           <button className="btn-primary" onClick={onPlayAgain}>Play again <kbd className="kbd">R</kbd></button>
         )}
         <button className="btn-secondary" onClick={() => setShareOpen(true)}>
-          <Share2 size={16} />Share results
+          Challenge a friend
         </button>
         {isDaily && <button className="btn-secondary" onClick={onOpenArchive}>Archive</button>}
       </div>

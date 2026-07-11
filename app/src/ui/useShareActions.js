@@ -6,7 +6,14 @@ const TRANSPARENT = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABA
 // keeps the export from throwing if any single image ever fails to load. skipFonts avoids a
 // cross-origin fetch of the Google Fonts stylesheet (which only logs an error and can't embed
 // anyway — the card renders fine with the system fallback).
-const PNG_OPTS = { pixelRatio: 2, backgroundColor: '#ffffff', imagePlaceholder: TRANSPARENT, skipFonts: true }
+// backgroundColor follows the active theme (--surface) so the exported PNG matches
+// how the card actually looks on the site, light or dark.
+const pngOpts = () => ({
+  pixelRatio: 2,
+  backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff',
+  imagePlaceholder: TRANSPARENT,
+  skipFonts: true,
+})
 
 export const canWebShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
@@ -34,7 +41,7 @@ export function useShareActions(cardRef, shareText, filename = 'six-spins.png') 
     try {
       let files
       try {
-        const blob = cardRef.current && (await toBlob(cardRef.current, PNG_OPTS))
+        const blob = cardRef.current && (await toBlob(cardRef.current, pngOpts()))
         const file = blob && new File([blob], filename, { type: 'image/png' })
         if (file && navigator.canShare?.({ files: [file] })) files = [file]
       } catch { /* image is a bonus; text always ships */ }
@@ -51,7 +58,7 @@ export function useShareActions(cardRef, shareText, filename = 'six-spins.png') 
     try {
       // Blob URL + an anchor attached to the DOM: a detached anchor or a multi-hundred-KB
       // data: URL silently fails to download in several browsers (Firefox, some Chrome).
-      const blob = await toBlob(cardRef.current, PNG_OPTS)
+      const blob = await toBlob(cardRef.current, pngOpts())
       if (!blob) throw new Error('export produced no image')
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
