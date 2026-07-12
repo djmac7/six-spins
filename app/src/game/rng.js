@@ -25,6 +25,26 @@ export function makeDealer(seed) {
   return { seed: s, index }
 }
 
+// Deal the `count` cells for one game as a seeded sample WITHOUT REPLACEMENT by FRANCHISE,
+// so a single game never lands on the same team twice (a repeat felt like "the same teams
+// again" — with pure independent draws ~42% of games hit one franchise twice, e.g. the
+// Lakers in two different decades). Each spin is still a uniform draw, just over the cells
+// of the not-yet-used franchises; the first spin is uniform over the whole grid. Fully
+// deterministic in the seed (shareable/reproducible) and independent of the player's rerolls.
+export function dealCells(dealer, cellList, count) {
+  const franchiseOf = (key) => key.slice(key.indexOf('_') + 1)
+  const used = new Set()
+  const out = []
+  for (let spin = 1; spin <= count; spin++) {
+    const pool = cellList.filter((key) => !used.has(franchiseOf(key)))
+    const list = pool.length ? pool : cellList // safety: never draw from an empty pool
+    const key = list[dealer.index(list.length, spin, 'cell')]
+    out.push(key)
+    used.add(franchiseOf(key))
+  }
+  return out
+}
+
 // Fresh seed for an unlimited game — random token, but the play that follows is fully
 // reproducible (so "share my board" works in unlimited too).
 export function randomSeed() {

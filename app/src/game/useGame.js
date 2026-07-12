@@ -7,7 +7,9 @@
 import { useMemo, useReducer, useCallback } from 'react'
 import { reducer, initialState } from './reducer.js'
 import { cellKey } from '../constants.js'
-import { makeDealer, randomSeed } from './rng.js'
+import { makeDealer, randomSeed, dealCells } from './rng.js'
+
+const SPINS = 6
 
 export function useGame(game, dealer) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
@@ -15,17 +17,22 @@ export function useGame(game, dealer) {
   // standalone / in tests; App always passes the session's dealer).
   const deal = useMemo(() => dealer || makeDealer(randomSeed()), [dealer])
 
-  // The nth dealt cell (spinNumber is 1..6) — a pure function of the seed, so a player's
-  // rerolls never shift the cells anyone else is dealt.
+  // The whole game's cells, dealt up front as a seeded sample WITHOUT REPLACEMENT by
+  // franchise (see dealCells) — so one game never shows the same team twice. Pure in the
+  // seed, so a player's rerolls never shift the cells anyone else is dealt.
+  const dealt = useMemo(() => dealCells(deal, game.cellList, SPINS), [deal, game.cellList])
+
+  // The nth dealt cell (spinNumber is 1..6). spinNumber+1 on the final pick is unused, so
+  // clamp into range rather than reading past the end.
   const cellAt = useCallback(
     (spinNumber) => {
-      const key = game.cellList[deal.index(game.cellList.length, spinNumber, 'cell')]
+      const key = dealt[Math.min(spinNumber, dealt.length) - 1]
       const i = key.indexOf('_')
       // the time-axis token is OPAQUE (an int season "1996" or a decade label "1990s"
       // depending on the data's pool_grain) — kept as the string from the cell key.
       return { season: key.slice(0, i), franchise: key.slice(i + 1) }
     },
-    [deal, game.cellList]
+    [dealt]
   )
 
   const newGame = useCallback(() => {
