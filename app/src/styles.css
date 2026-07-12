@@ -96,9 +96,21 @@ body {
   background: var(--page);
   color: var(--text);
   font-family: var(--sans); /* Schibsted Grotesk — Hardwood body/UI face */
-  font-feature-settings: 'tnum' 1;
+  /* NOTE: do NOT put tabular figures ('tnum') on body — in Schibsted Grotesk the tabular set
+     widens comma/period glyphs, which reads as a phantom space before punctuation in prose
+     (the info docs, settings copy, how-to). Tabular figures are scoped to the numeric UI
+     below (`.tabular-figs` selector list) where column/count-up alignment actually needs them. */
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+}
+
+/* Tabular figures ONLY where numbers align in columns or count up (so digits don't jitter).
+   Kept off prose so sentence punctuation keeps its natural spacing. */
+.pcard__stats, .sheet__statline, .stat__v,
+.rrow__rating, .slot__rating, .goat-card__total-value, .goat-card__total-ceil,
+.result-card__total, .result-card__ceil, .pct-slam__num, .comp__pct,
+.vs-score__num, .reveal-team__score, .tyreel__item.year {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Hardwood display face (Fraunces) for the big titles & hero numerals — the game's
