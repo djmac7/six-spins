@@ -39,7 +39,7 @@ const html = `<!doctype html>
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#FAF9F5; --panel:#FFFFFF; --panel-2:#F6F4EC;
@@ -65,26 +65,26 @@ const html = `<!doctype html>
   .pitch{ width:540px; flex:0 0 540px; }
   .eyebrow{
     display:inline-flex; align-items:center; gap:11px;
-    font-family:var(--mono); font-weight:600; font-size:17px; letter-spacing:0.26em;
+    font-family:var(--sans); font-weight:700; font-size:17px; letter-spacing:0.22em;
     color:var(--ink-3); text-transform:uppercase; margin-bottom:26px;
   }
   .eyebrow .emblem{ font-size:26px; letter-spacing:0; }
   .wordmark{
-    font-family:var(--serif); font-weight:900; font-size:118px; line-height:0.86;
-    letter-spacing:-0.04em; color:var(--ink); margin-bottom:30px;
+    font-family:var(--sans); font-weight:800; font-size:120px; line-height:0.86;
+    letter-spacing:-0.045em; color:var(--ink); margin-bottom:30px;
   }
-  .wordmark b{ color:var(--accent); font-weight:900; }
+  .wordmark b{ color:var(--accent); font-weight:800; }
   .tagline{
-    font-family:var(--serif); font-weight:600; font-size:40px; line-height:1.12;
-    letter-spacing:-0.015em; color:var(--ink); margin-bottom:16px;
+    font-family:var(--sans); font-weight:700; font-size:40px; line-height:1.12;
+    letter-spacing:-0.025em; color:var(--ink); margin-bottom:16px;
   }
-  .tagline .goat{ color:var(--accent-deep); font-weight:700; }
+  .tagline .goat{ color:var(--accent-deep); font-weight:800; }
   .sub{ font-size:22px; font-weight:500; color:var(--ink-2); letter-spacing:-0.01em; margin-bottom:38px; line-height:1.4; max-width:470px; text-wrap:balance; }
 
   .chips{ display:flex; gap:26px; padding-left:2px; }
   .chip{ display:flex; flex-direction:column; gap:5px; }
   .chip .n{ font-family:var(--sans); font-weight:800; font-size:34px; line-height:1; letter-spacing:-0.03em; }
-  .chip .l{ font-family:var(--mono); font-weight:600; font-size:12px; letter-spacing:0.10em; color:var(--ink-3); text-transform:uppercase; }
+  .chip .l{ font-family:var(--sans); font-weight:600; font-size:12px; letter-spacing:0.10em; color:var(--ink-3); text-transform:uppercase; }
 
   /* ---------- right: the result card (clean/editorial) ---------- */
   .card{
@@ -96,7 +96,7 @@ const html = `<!doctype html>
   .card__brand{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .card__logo{ font-weight:800; letter-spacing:0.05em; font-size:17px; color:var(--ink); }
   .card__logo b{ color:var(--accent); }
-  .card__daily{ font-family:var(--mono); font-weight:600; font-size:13px; letter-spacing:0.03em; color:var(--ink-4); }
+  .card__daily{ font-family:var(--sans); font-weight:600; font-size:13px; letter-spacing:0.03em; color:var(--ink-4); }
 
   .card__head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
   .card__score{ display:flex; align-items:baseline; gap:9px; }
@@ -115,7 +115,7 @@ const html = `<!doctype html>
     background:var(--panel-2); box-shadow:0 0 0 1px var(--line) inset;
   }
   .who{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
-  .who .ab{ font-family:var(--mono); font-weight:600; font-size:11.5px; letter-spacing:0.09em; color:var(--ink-3); text-transform:uppercase; }
+  .who .ab{ font-family:var(--sans); font-weight:600; font-size:11.5px; letter-spacing:0.09em; color:var(--ink-3); text-transform:uppercase; }
   .who .nm{ font-weight:800; font-size:21px; letter-spacing:-0.02em; color:var(--ink); line-height:1; }
   .who .tm{ display:flex; align-items:center; gap:7px; font-size:14px; font-weight:600; color:var(--ink-2); letter-spacing:-0.01em; }
   .who .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
