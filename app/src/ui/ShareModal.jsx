@@ -51,7 +51,7 @@ export default function ShareModal({ game, state, comp, tag, message, url, total
     t: encodeURIComponent(message),
     tFull: encodeURIComponent(url ? `${message}\n${url}` : message),
     tLine: encodeURIComponent(message.split('\n').join(' · ')),
-    u: encodeURIComponent(url),
+    u: url ? encodeURIComponent(url) : '',
   }
   const openIntent = (href) => window.open(href, '_blank', 'noopener,noreferrer')
   async function copyLink() {

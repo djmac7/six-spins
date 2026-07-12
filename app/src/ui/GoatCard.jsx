@@ -52,7 +52,7 @@ export default function GoatCard({ slots, game, runningTotal, lastLockKey, revea
       {!hideRatings && !hideTotal && (
         <div className="goat-card__total">
           <span className="goat-card__total-label">OVERALL</span>
-          <span className={'goat-card__total-value tier-' + ratingTier(runningTotal / 6)}>
+          <span className={'goat-card__total-value tier-' + ratingTier(computeOvr(runningTotal))}>
             {computeOvr(runningTotal)}<span className="goat-card__total-ceil"> OVR</span>
           </span>
         </div>

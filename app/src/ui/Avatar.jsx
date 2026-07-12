@@ -36,7 +36,7 @@ export default function Avatar({ name, src, color = '#333', size = 44, rounded =
           crossOrigin="anonymous"
           loading="lazy"
           decoding="async"
-          fetchPriority="low"
+          fetchpriority="low"
           onLoad={() => setLoaded(true)}
           onError={() => setBroken(true)}
         />
