@@ -337,7 +337,8 @@ def curate_season(cfg, pool, scored, membership, franchises, cur,
             if 0 < len(rows) < min_roster:
                 thin.append(f"{int(season)} {franchise} ({len(rows)})")
             continue
-        roster = rows.sort_values("mp", ascending=False, kind="stable")["id"].head(roster_size).tolist()
+        roster = rows.sort_values(["mp", "id"], ascending=[False, True],
+                                  kind="stable")["id"].head(roster_size).tolist()
         rosters[f"{int(season)}_{franchise}"] = roster
         pool_player_ids.update(roster)
         used_franchises.add(franchise)

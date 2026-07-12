@@ -56,7 +56,7 @@ Stages can also be run individually in order (`python pipeline/01_ingest.py`, �
 | §4 universe filter | `02_filter.py` |
 | §5 per-100 normalization | `03_normalize.py` (uses `*_per_100_poss` columns) |
 | §6 shrinkage | `common.shrink` + `03_normalize.py` (toward each **season's** league mean) |
-| §7 weighted components | `04_score.py` + `config.weights`; at-rim gating = weight renormalization in `common.weighted_composite` |
+| §7 weighted components | `04_score.py` + `config.weights`; NaN components (e.g. no-3PA shooters) are renormalized away in `common.weighted_composite`. The at-rim finishing term is **computed but not wired into scoring** — `at_rim.enabled: false` (see config.yml note) |
 | §8 percentile method | `common.percentile_rank` (`100·(rank−0.5)/N`, averaged ties); ceiling from pool maxima |
 | §9 output | `05_curate.py` -> `goat-data.json` |
 | §10 reproducibility | this layout; all tunables in `config.yml`, echoed into `meta` |

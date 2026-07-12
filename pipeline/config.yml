@@ -15,7 +15,7 @@ paths:
 
 # --- §12 Monte Carlo percentile generator (06_montecarlo.py) ---
 # Simulate many LEGAL random playthroughs of the real game (forced assignment,
-# one-player-once, one Team-reroll + one Year-reroll) and record each final score.
+# player reuse allowed, one Team-reroll + one Year-reroll) and record each final score.
 # The score->percentile CDF is what the app reads to headline "Xth percentile".
 montecarlo:
   n_sims: 500000              # number of random legal playthroughs
@@ -87,10 +87,12 @@ shrink_K:
   fg2: 100                    # 2P%  shrunk on x2pa toward season league 2P%
 
 # --- §7 at-rim finishing component (1997+ only, optional/gated) ---
-# Enabled: rows with Player Shooting data (season >= 1997) get the 4th Finishing component;
-# rows without it fall back to the proportionally-redistributed 3-component weights automatically.
+# NOT WIRED IN: 03_normalize computes `at_rim_shrunk` when enabled, but 04_score never reads
+# it — the shooting composite is {fg3_pct, ft_pct, score3, mid_range}, no finishing term. Kept
+# disabled so config matches scoring reality; flip to true AND add at_rim to weights.shooting
+# (with a re-tune + full regen) to actually score it. See README §7.
 at_rim:
-  enabled: true
+  enabled: false
   min_season: 1997
   K: 100                      # shrink at-rim FG% on estimated 0-3ft attempts toward season league mean
 

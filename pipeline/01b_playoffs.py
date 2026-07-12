@@ -125,8 +125,18 @@ def main():
         raise SystemExit(f"[FATAL] playoff id match rate {rate:.2%} < {min_rate:.0%} — "
                          f"extend pipeline/id_overrides.csv with the names above.")
 
-    out = agg[matched][["player_id", "season", "po_g", "po_mp", "po_pts",
-                        "po_fga", "po_fta", "po_ppg", "po_ts"]].copy()
+    # Collapse to one row per (player_id, season): two normalized name-FORMS in the same
+    # season can resolve to the same bbref id (single-token fallback or id_overrides), which
+    # otherwise fans out that player's stint rows in 04_score's left merge (mirrors 01c).
+    # Sum the TOTALS and RE-DERIVE the rate columns — never sum a rate.
+    out = (agg[matched].groupby(["player_id", "season"], as_index=False)
+           .agg(po_g=("po_g", "sum"), po_mp=("po_mp", "sum"), po_pts=("po_pts", "sum"),
+                po_fga=("po_fga", "sum"), po_fta=("po_fta", "sum")))
+    out["po_ppg"] = out["po_pts"] / out["po_g"].clip(lower=1)
+    _tsa = out["po_fga"] + 0.44 * out["po_fta"]
+    out["po_ts"] = (out["po_pts"] / (2.0 * _tsa)).where(_tsa > 0)
+    out = out[["player_id", "season", "po_g", "po_mp", "po_pts",
+               "po_fga", "po_fta", "po_ppg", "po_ts"]]
     out["season"] = out["season"].astype(int)
     out = out.sort_values(["player_id", "season"]).reset_index(drop=True)
     os.makedirs(os.path.dirname(work_path(cfg, "x")), exist_ok=True)

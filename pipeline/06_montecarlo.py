@@ -14,9 +14,10 @@ The real rules modelled here (mirror of the app reducer):
   - Six slots in the fixed ability order; one rating harvested per spin, ×6.
   - Team and Year are INDEPENDENT axes. Each spin lands on a uniformly random legal
     (franchise, season) CELL of the pool grid (redraws allowed).
-  - A spin's pick is a FORCED ASSIGNMENT: an unused player from the cell's roster is
-    locked into an open slot at that ability's rating. No passing.
-  - Each player id is usable ONCE across the whole run.
+  - A spin's pick is a FORCED ASSIGNMENT: a player from the cell's roster is locked into
+    an open slot at that ability's rating. No passing.
+  - There is NO one-player-once rule: the same player id may be drafted into more than one
+    slot (mirrors the app reducer, which tracks usedPlayerIds but never restricts on it).
   - One Team-reroll (new franchise, SAME season) and one Year-reroll (new season, SAME
     franchise) per game — each only offered when such a cell exists.
 
