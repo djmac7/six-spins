@@ -29,6 +29,9 @@ export default function RosterBoard({ team, players, openAbilities, onAssign, hi
   const textColor = readableText(team.color)
   // blind mode: force a name sort so the order can't leak the hidden stats
   const effSort = hideStats ? 'az' : sort
+  // the stat column being sorted on (null for A–Z / blind) — emphasized in each row so the
+  // eye can scan the column you ranked by
+  const activeStat = effSort === 'az' ? null : effSort
   const ordered = useMemo(() => [...players].sort((a, b) =>
     effSort === 'az'
       ? lastName(a.name).localeCompare(lastName(b.name)) || (a.name || '').localeCompare(b.name || '')
@@ -117,7 +120,7 @@ export default function RosterBoard({ team, players, openAbilities, onAssign, hi
             {!hideStats && (
               <div className="pcard__stats">
                 {STAT_LINE.map((s) => (
-                  <div key={s.key} className="stat">
+                  <div key={s.key} className={'stat' + (s.key === activeStat ? ' active' : '')}>
                     <span className="stat__v">{fmt1(p.stats?.[s.key])}</span>
                     <span className="stat__k">{s.label}</span>
                   </div>
@@ -134,6 +137,7 @@ export default function RosterBoard({ team, players, openAbilities, onAssign, hi
           openAbilities={openAbilities}
           team={team}
           hideStats={hideStats}
+          activeStat={activeStat}
           onPick={(ability) => {
             onAssign(selected.id, ability)
             setSelected(null)
@@ -145,7 +149,7 @@ export default function RosterBoard({ team, players, openAbilities, onAssign, hi
   )
 }
 
-function AssignSheet({ player, openAbilities, team, hideStats = false, onPick, onClose }) {
+function AssignSheet({ player, openAbilities, team, hideStats = false, activeStat = null, onPick, onClose }) {
   const optRefs = useRef([])
   const [optIdx, setOptIdx] = useState(0)
 
@@ -189,7 +193,7 @@ function AssignSheet({ player, openAbilities, team, hideStats = false, onPick, o
         {!hideStats && (
           <div className="sheet__statline">
             {STAT_LINE.map((s) => (
-              <div key={s.key} className="stat">
+              <div key={s.key} className={'stat' + (s.key === activeStat ? ' active' : '')}>
                 <span className="stat__v">{fmt1(player.stats?.[s.key])}</span>
                 <span className="stat__k">{s.label}</span>
               </div>
