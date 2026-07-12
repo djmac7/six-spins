@@ -43,6 +43,13 @@
   --t-good: var(--plum);    /* purple */
   --t-mid: var(--accent);   /* coral */
   --t-low: var(--crit);     /* red */
+
+  /* Accessibility overrides (WCAG AA): the Hardwood defaults sit just under 4.5:1 on the
+     ivory canvas for small text. Deepen the de-emphasis tier, links, and the gold used on
+     display numerals so labels/links/ratings clear AA without losing the hierarchy. */
+  --faint: #6f6a5b;         /* ink-3 was #8D8877 (3.4:1) → 5.1:1; still the faintest text tier */
+  --accent-deep: #b35330;   /* was #BF5D3B (4.1:1) → 4.8:1 for links + white-on-primary button */
+  --gold: #a87a1e;          /* was #B98A32 (3.0:1) → 3.7:1 so gold ratings/OVR clear AA-large */
 }
 
 /* ---------- dark theme (toggled in Settings) ---------- */
@@ -54,6 +61,7 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.55);
   /* --t-* rating ramp is defined once above via theme-aware Hardwood tokens */
+  --faint: #9a9382;  /* AA: ink-3 dark (#847F72, ~3.8:1) → ~5.4:1 on the dark canvas */
 }
 
 /* Accolade (tier) color — mapped onto the Hardwood/Claude palette. The referenced tokens are
@@ -268,6 +276,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font-family: inherit; box-shadow: var(--shadow);
 }
 .goat-toggle__label { font-weight: 800; font-size: 12px; letter-spacing: -0.01em; color: var(--text); flex: 0 0 auto; }
+/* progress count so "how many of 6 have I filled" reads at a glance (the faces alone were cryptic) */
+.goat-toggle__count { font-weight: 800; font-size: 12px; color: var(--accent-dim); flex: 0 0 auto; margin-left: 1px; }
+.goat-toggle__count-of { color: var(--muted); font-weight: 700; }
 .goat-toggle__faces { display: flex; gap: 4px; margin-left: auto; }
 .goat-toggle__faces .avatar { width: 26px; height: 26px; border-radius: 50%; }
 .goat-toggle__ph { width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); border: 1px dashed var(--border-strong); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
@@ -360,7 +371,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   box-shadow: var(--shadow);
 }
 .reroll-mini svg { color: var(--accent); flex: 0 0 auto; }
-.reroll-mini:disabled { opacity: 0.42; }
+/* remaining-uses badge: makes it obvious a reroll exists AND that it's a one-per-game resource */
+.reroll-mini__n {
+  flex: 0 0 auto; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 800; line-height: 1;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent-dim);
+}
+.reroll-mini:disabled .reroll-mini__n { background: var(--surface2); color: var(--faint); }
+.reroll-mini:disabled { opacity: 0.55; }
 .reroll-mini:not(:disabled):active { transform: scale(0.96); }
 @media (max-width: 360px) { .reroll-mini__label { display: none; } }
 
@@ -748,7 +767,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .settings__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .settings__title { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
 .settings__close {
-  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
   border-radius: 8px; cursor: pointer; background: var(--surface2); border: 0; color: var(--muted);
   transition: background 0.13s ease, color 0.13s ease;
 }
@@ -779,7 +798,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .setting-link:active { background: color-mix(in srgb, var(--text) 9%, var(--surface2)); }
 /* back button in the info header */
 .info-back {
-  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
   border-radius: 8px; cursor: pointer; background: var(--surface2); border: 0; color: var(--muted);
 }
 /* long-form info doc (methodology / privacy / terms) */
@@ -827,7 +846,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .share-modal__title { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
 .share-modal__sub { margin: 3px 0 0; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .share-modal__close {
-  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
   border-radius: 9px; cursor: pointer; background: var(--surface2); border: 0; color: var(--muted);
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -908,9 +927,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .modebar__brand:hover .modebar__logo { transform: scale(1.25) rotate(360deg); }
 /* Restart: deliberately quiet — a muted text+icon affordance, not a glaring CTA */
 .modebar__new {
-  display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-family: inherit;
   font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
-  color: var(--faint); background: none; border: 0; padding: 6px 2px;
+  color: var(--faint); background: none; border: 0; padding: 8px; min-width: 40px; min-height: 40px;
   transition: color 0.15s ease;
 }
 .modebar__new:active { transform: scale(0.96); }

@@ -46,7 +46,7 @@ const html = `<!doctype html>
     --line:#E7E3D7; --line-soft:#EFEBDF;
     --ink:#1A1915; --ink-2:#5A564C; --ink-3:#8D8877; --ink-4:#B4AF9F;
     --accent:#D97757; --accent-deep:#BF5D3B; --accent-wash:#FBEEE7;
-    --slate:#4E6E7E; --gold:#B98A32; --plum:#8A5A6B; --good:#5C7A52;
+    --slate:#4E6E7E; --gold:#9A6F1F; --plum:#8A5A6B; --good:#5C7A52;
     --t-goat:var(--gold); --t-elite:var(--good); --t-great:var(--slate); --t-good:var(--plum);
     --serif:"Fraunces",Georgia,serif;
     --sans:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -81,10 +81,11 @@ const html = `<!doctype html>
   .tagline .goat{ color:var(--accent-deep); font-weight:800; }
   .sub{ font-size:22px; font-weight:500; color:var(--ink-2); letter-spacing:-0.01em; margin-bottom:38px; line-height:1.4; max-width:470px; text-wrap:balance; }
 
-  .chips{ display:flex; gap:26px; padding-left:2px; }
-  .chip{ display:flex; flex-direction:column; gap:5px; }
-  .chip .n{ font-family:var(--sans); font-weight:800; font-size:34px; line-height:1; letter-spacing:-0.03em; }
-  .chip .l{ font-family:var(--sans); font-weight:600; font-size:12px; letter-spacing:0.10em; color:var(--ink-3); text-transform:uppercase; }
+  /* one clean value line describing the LOOP (the card already shows the numbers, so chips
+     that repeat them were redundant — this tells a first-timer what the game actually is) */
+  .format{ display:flex; align-items:center; gap:14px; font-weight:700; font-size:19px; color:var(--ink-2); letter-spacing:-0.01em; }
+  .format b{ color:var(--ink); font-weight:800; }
+  .format .dot{ width:5px; height:5px; border-radius:50%; background:var(--ink-4); flex:0 0 auto; }
 
   /* ---------- right: the result card (clean/editorial) ---------- */
   .card{
@@ -94,7 +95,8 @@ const html = `<!doctype html>
     box-shadow:0 1px 3px rgba(26,25,19,.04), 0 24px 60px rgba(26,25,19,.13);
   }
   .card__brand{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-  .card__logo{ font-weight:800; letter-spacing:0.05em; font-size:17px; color:var(--ink); }
+  /* muted, small card-brand mark — the big left wordmark owns the branding, this just labels the card */
+  .card__logo{ font-weight:800; letter-spacing:0.05em; font-size:13px; color:var(--ink-3); }
   .card__logo b{ color:var(--accent); }
   .card__daily{ font-family:var(--sans); font-weight:600; font-size:13px; letter-spacing:0.03em; color:var(--ink-4); }
 
@@ -104,7 +106,7 @@ const html = `<!doctype html>
   .card__ceil{ font-size:24px; font-weight:800; color:var(--ink-3); letter-spacing:0.03em; }
   .card__badge{
     padding:8px 20px; border-radius:999px; font-size:22px; font-weight:800; letter-spacing:0.02em;
-    color:var(--gold); background:#F6EBD5;
+    color:#fff; background:var(--gold);
   }
 
   .rows{ display:flex; flex-direction:column; }
@@ -131,11 +133,10 @@ const html = `<!doctype html>
     <div class="wordmark">SIX <b>SPINS</b></div>
     <div class="tagline">Build the <span class="goat">GOAT</span> in six&nbsp;spins.</div>
     <div class="sub">Steal one elite rating each spin. About a minute a day.</div>
-    <div class="chips">
-      <div class="chip"><span class="n t-goat">99</span><span class="l">Shoot</span></div>
-      <div class="chip"><span class="n t-elite">96</span><span class="l">Score</span></div>
-      <div class="chip"><span class="n t-great">88</span><span class="l">Pass</span></div>
-      <div class="chip"><span class="n t-good">80</span><span class="l">Reb</span></div>
+    <div class="format">
+      <span><b>6</b> spins</span><span class="dot"></span>
+      <span><b>6</b> abilities</span><span class="dot"></span>
+      <span><b>~60</b> seconds a day</span>
     </div>
   </div>
 

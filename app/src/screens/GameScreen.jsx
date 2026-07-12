@@ -15,6 +15,7 @@ import { teamDisplay } from '../ui/helpers.js'
 export default function GameScreen({ game, state, actions, canRerollTeam, canRerollYear, currentRoster, hideStats }) {
   const team = teamDisplay(game, state.currentFranchise, state.currentSeason)
   const openAbilities = state.slots.filter((s) => s.status === 'open').map((s) => s.ability)
+  const filledCount = state.slots.filter((s) => s.status === 'filled').length
   const teamTitle = state.rerollTeamUsed ? 'Team respin used (one per game)' : 'Respin the team (one per game)'
   const yearTitle = state.rerollYearUsed ? 'Decade respin used (one per game)' : 'Respin the decade (one per game)'
   // mobile: collapse the "your GOAT" card to give the player list room (always shown on desktop)
@@ -33,11 +34,13 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
             <span className="reroll-mini-wrap" title={teamTitle}>
               <button className="reroll-mini" disabled={!canRerollTeam} onClick={actions.rerollTeam} aria-label="Respin team">
                 <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" /><span className="reroll-mini__label">Team</span>
+                <span className="reroll-mini__n" aria-hidden="true">{state.rerollTeamUsed ? '0' : '1'}</span>
               </button>
             </span>
             <span className="reroll-mini-wrap" title={yearTitle}>
               <button className="reroll-mini" disabled={!canRerollYear} onClick={actions.rerollYear} aria-label="Respin decade">
                 <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" /><span className="reroll-mini__label">Decade</span>
+                <span className="reroll-mini__n" aria-hidden="true">{state.rerollYearUsed ? '0' : '1'}</span>
               </button>
             </span>
           </div>
@@ -48,6 +51,7 @@ export default function GameScreen({ game, state, actions, canRerollTeam, canRer
           aria-expanded={cardOpen}
         >
           <span className="goat-toggle__label">Your Player</span>
+          <span className="goat-toggle__count">{filledCount}<span className="goat-toggle__count-of">/6</span></span>
           <span className="goat-toggle__faces">
             {state.slots.map((slot) => {
               const isFilled = slot.status === 'filled'
