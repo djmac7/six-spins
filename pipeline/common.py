@@ -1,4 +1,4 @@
-"""Shared helpers for the BUILD THE GOAT data/scoring pipeline.
+"""Shared helpers for the SIX SPINS data/scoring pipeline.
 
 Every stage script (01..05) imports from here. Pure, deterministic functions only —
 no randomness, no network, no clock. See build-the-goat-data-scoring-spec.md.

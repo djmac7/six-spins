@@ -1,4 +1,4 @@
-# BUILD THE GOAT — pipeline configuration (every tunable lives here; echoed into goat-data.json meta)
+# SIX SPINS — pipeline configuration (every tunable lives here; echoed into goat-data.json meta)
 # Spec: build-the-goat-data-scoring-spec.md  §10
 
 source: "basketball-reference via kaggle:sumitrodatta/nba-aba-baa-stats"
