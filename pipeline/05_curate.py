@@ -32,7 +32,30 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import pandas as pd
 import yaml
-from common import load_config, work_path, repo_path, percentile_rank, game_curve
+from common import load_config, work_path, repo_path, percentile_rank, game_curve, read_table
+
+
+def recognized_star_seasons(cfg):
+    """Set of (player_id, season) that earned a RECOGNIZED accolade that year:
+    an All-Star selection, an All-NBA team, or an All-Defensive team. This is the
+    "was a famous star this season" signal that drives roster force-includes — a
+    short-tenure legend (Kobe's rookie Lakers, KG's late Celtics, Mutombo's 76ers)
+    defined a team in far fewer minutes than the career role players who out-rank him
+    on pure minutes, so the minutes cut alone drops names casuals expect to see.
+
+    Deterministic (recorded selections only), and joined to the franchise/decade via
+    each player's actual STINT that season (see curate_decade), so a player is only
+    force-added to the team he actually starred for."""
+    pairs = set()
+    # All-Star selections (drop ABA — the pool is NBA/BAA)
+    a = read_table(cfg, "All-Star Selections.csv", ["season", "lg", "player_id"])
+    a = a[a["lg"].str.upper().isin(["NBA", "BAA"])]
+    pairs |= set(zip(a["player_id"], pd.to_numeric(a["season"], errors="coerce")))
+    # All-NBA + All-Defensive teams (End of Season Teams voting file)
+    v = read_table(cfg, "End of Season Teams (Voting).csv", ["season", "type", "player_id"])
+    v = v[v["type"].isin(["all_nba", "all_defense"])]
+    pairs |= set(zip(v["player_id"], pd.to_numeric(v["season"], errors="coerce")))
+    return {(p, int(s)) for p, s in pairs if pd.notna(s)}
 
 RATINGS = ["shooting", "scoring", "playmaking",
            "defense", "clutch", "rebounding"]
@@ -228,6 +251,15 @@ def curate_decade(cfg, scored, membership, franchises, cur, roster_size, min_ros
     cell_mp["id"] = [decade_pid(p, d, f) for p, d, f in
                      zip(cell_mp["player_id"], cell_mp["decade"], cell_mp["franchise"])]
 
+    # ACCOLADE AUTO-INCLUDES: any player who earned an All-Star / All-NBA / All-Defensive
+    # selection in a season he played (a qualifying stint) for this franchise is force-added
+    # to that decade cell even if his minutes rank below the cut — so the recognizable names
+    # a casual expects on a roster aren't dropped for higher-minute career role players.
+    stars = recognized_star_seasons(cfg)
+    star_mem = mem[[(p, int(s)) in stars for p, s in zip(mem["player_id"], mem["season"])]]
+    star_by_cell = (star_mem.groupby(["decade", "franchise"])["player_id"]
+                    .apply(lambda s: sorted(set(s))).to_dict())
+
     by_id = entries.set_index("id")
     rosters, pool_ids, used_franchises, used_decades = {}, set(), set(), set()
     thin = []
@@ -239,16 +271,30 @@ def curate_decade(cfg, scored, membership, franchises, cur, roster_size, min_ros
             if len(rows) > 0:
                 thin.append(f"{decade} {franchise} ({len(rows)})")
             continue
-        roster = rows.sort_values(["mp", "id"], ascending=[False, True],
-                                  kind="stable")["id"].head(roster_size).tolist()
-        # accolade force-includes: prepend any configured id that has a rating-complete
-        # entry but was cut by the minutes ranking, then trim back to roster_size (drops
-        # the lowest-minutes qualifier). See pool.yml `roster_includes`.
-        forced = [decade_pid(p, decade, franchise)
-                  for p in roster_includes.get(f"{decade}_{franchise}", [])]
-        for fid in forced:
-            if fid in by_id.index and fid not in roster:
-                roster = [fid] + roster[:roster_size - 1]
+        ranked = rows.sort_values(["mp", "id"], ascending=[False, True],
+                                  kind="stable")["id"].tolist()
+        roster = ranked[:roster_size]
+        # force-includes: automatic accolade stars (All-Star / All-NBA / All-Defensive that
+        # season on this franchise) plus any manual pool.yml `roster_includes`. Each must have
+        # a rating-complete entry. Prepend the ones the minutes cut missed (highest-minutes
+        # first) and drop the lowest-minutes non-forced qualifier to hold roster_size; a cell
+        # with more stars than roster_size keeps them all rather than cut a recognizable name.
+        auto = star_by_cell.get((decade, franchise), [])
+        manual = roster_includes.get(f"{decade}_{franchise}", [])
+        rank_pos = {rid: i for i, rid in enumerate(ranked)}   # ranked is minutes-sorted desc
+        forced = [decade_pid(p, decade, franchise) for p in dict.fromkeys(list(manual) + list(auto))]
+        forced = {f for f in forced if f in by_id.index and f in rank_pos}
+        missing = [f for f in forced if f not in roster]
+        if missing:
+            roster = roster + missing
+            # trim back toward roster_size by dropping the lowest-minutes NON-forced
+            # qualifiers (never a forced star); a star-dense cell keeps all its stars.
+            i = len(roster) - 1
+            while len(roster) > roster_size and i >= 0:
+                if roster[i] not in forced:
+                    roster.pop(i)
+                i -= 1
+            roster.sort(key=lambda f: rank_pos[f])   # restore minutes order for display
         rosters[f"{decade}_{franchise}"] = roster
         pool_ids.update(roster)
         used_franchises.add(franchise)
