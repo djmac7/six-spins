@@ -1,12 +1,9 @@
 import Avatar from './Avatar.jsx'
 import { playerPhotoUrl } from './assets.js'
 import { matchColor } from '../game/comp.js'
-import { STAT_LINE } from '../constants.js'
 
-const fmt1 = (v) => (v == null ? '-' : Number(v).toFixed(1))
-
-// "Plays like X" comp card: the comp player's headshot + name/team, a color-coded % match,
-// and their per-game line. Shared by the reveal and the result card.
+// "Plays like X" comp card: the comp player's headshot + name/team and a color-coded % skill
+// match. Shared by the reveal and the result card.
 export default function PlayerComp({ comp }) {
   if (!comp?.player) return null
   const p = comp.player
@@ -23,15 +20,6 @@ export default function PlayerComp({ comp }) {
           <span className="comp__pct">{comp.match}%</span>
           <span className="comp__pct-label">skill match</span>
         </div>
-      </div>
-      <div className="comp__statcap">{p.name}’s per-game averages</div>
-      <div className="comp__stats">
-        {STAT_LINE.map((s) => (
-          <div key={s.key} className="stat">
-            <span className="stat__v">{fmt1(p.stats?.[s.key])}</span>
-            <span className="stat__k">{s.label}</span>
-          </div>
-        ))}
       </div>
     </div>
   )
