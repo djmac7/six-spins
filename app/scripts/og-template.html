@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Hardwood / Claude design tokens — light mode (source: src/design/tokens.css) */
+  :root{
+    --bg:#FAF9F5; --bg-sunk:#F1EFE7; --panel:#FFFFFF; --panel-2:#F6F4EC;
+    --line:#E7E3D7; --line-strong:#D6D1C2; --line-soft:#EFEBDF;
+    --ink:#1A1915; --ink-2:#5A564C; --ink-3:#8D8877; --ink-4:#B4AF9F;
+    --accent:#D97757; --accent-deep:#BF5D3B; --accent-soft:#F0D3C5; --accent-wash:#FBEEE7;
+    --slate:#4E6E7E; --gold:#B98A32; --moss:#6C7A54; --plum:#8A5A6B;
+    --good:#5C7A52; --crit:#B4523A;
+    /* rating tiers (helpers.js ratingTier -> tokens) */
+    --t-goat:var(--gold); --t-elite:var(--good); --t-great:var(--slate); --t-good:var(--plum);
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:1200px;height:630px;}
+  body{
+    font-family:var(--sans); color:var(--ink);
+    background:
+      radial-gradient(1100px 620px at 112% -18%, var(--accent-wash) 0%, rgba(251,238,231,0) 60%),
+      radial-gradient(900px 700px at -12% 120%, #F3EFE4 0%, rgba(243,239,228,0) 55%),
+      var(--bg);
+    display:flex; align-items:center; gap:56px;
+    padding:0 64px; overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------------- left: the pitch ---------------- */
+  .pitch{ width:560px; flex:0 0 560px; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:12px;
+    font-family:var(--mono); font-weight:700; font-size:20px; letter-spacing:0.30em;
+    color:var(--accent-deep); text-transform:uppercase; margin-bottom:22px;
+  }
+  .eyebrow .emblem{ font-size:34px; letter-spacing:0; }
+  .wordmark{
+    font-family:var(--serif); font-weight:900; font-size:132px; line-height:0.9;
+    letter-spacing:-0.035em; color:var(--ink);
+  }
+  .wordmark b{ color:var(--accent); font-weight:900; }
+  .rule{ width:132px; height:8px; border-radius:99px; background:var(--accent); margin:26px 0 24px; }
+  .tagline{
+    font-family:var(--serif); font-weight:700; font-size:44px; line-height:1.06;
+    letter-spacing:-0.02em; color:var(--ink); margin-bottom:14px;
+  }
+  .tagline .goat{ color:var(--accent-deep); }
+  .sub{ font-size:23px; font-weight:600; color:var(--ink-2); letter-spacing:-0.01em; margin-bottom:30px; }
+  .sub b{ color:var(--ink); font-weight:700; }
+
+  .chips{ display:flex; gap:11px; }
+  .chip{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    width:82px; padding:12px 4px 10px; border-radius:12px;
+    background:var(--panel); border:1px solid var(--line);
+    box-shadow:0 1px 2px rgba(26,25,19,.04);
+  }
+  .chip .n{ font-family:var(--sans); font-weight:800; font-size:30px; line-height:1; letter-spacing:-0.03em; }
+  .chip .l{ font-family:var(--mono); font-weight:600; font-size:11px; letter-spacing:0.08em; color:var(--ink-3); text-transform:uppercase; }
+
+  /* ---------------- right: the result card ---------------- */
+  .card{
+    width:456px; flex:0 0 456px;
+    background:var(--panel); border:1px solid var(--line); border-top:6px solid var(--t-goat);
+    border-radius:20px; padding:26px 26px 22px;
+    box-shadow:0 2px 4px rgba(26,25,19,.05), 0 26px 60px rgba(26,25,19,.14);
+  }
+  .card__brand{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:14px;
+  }
+  .card__logo{ font-weight:800; letter-spacing:0.06em; font-size:19px; color:var(--ink); }
+  .card__logo b{ color:var(--accent); }
+  .card__daily{ font-family:var(--mono); font-weight:600; font-size:14px; letter-spacing:0.04em; color:var(--ink-3); }
+  .card__emblem{ font-size:26px; }
+
+  .card__head{ display:flex; align-items:center; justify-content:space-between; padding:2px 2px 16px; }
+  .card__score{ display:flex; align-items:baseline; gap:8px; }
+  .card__ovr{ font-family:var(--sans); font-weight:900; font-size:92px; line-height:0.8; letter-spacing:-0.04em; color:var(--t-goat); }
+  .card__ceil{ font-size:26px; font-weight:800; color:var(--ink-3); letter-spacing:0.02em; }
+  .card__badge{
+    padding:7px 20px; border-radius:999px; font-size:24px; font-weight:900; letter-spacing:0.02em;
+    color:#fff; background:var(--t-goat);
+  }
+
+  .rows{ display:flex; flex-direction:column; gap:9px; }
+  .row{
+    display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:12px;
+    background:var(--panel-2); border-left:5px solid var(--team);
+  }
+  .ava{
+    width:46px; height:46px; flex:0 0 auto; border-radius:11px; background:var(--team); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--sans); font-weight:800; font-size:17px; letter-spacing:-0.02em;
+  }
+  .who{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .who .ab{ font-family:var(--mono); font-weight:600; font-size:12px; letter-spacing:0.07em; color:var(--ink-3); text-transform:uppercase; }
+  .who .nm{ font-weight:800; font-size:20px; letter-spacing:-0.02em; color:var(--ink); }
+  .who .tm{ font-size:13px; font-weight:700; color:var(--team); letter-spacing:-0.01em; }
+  .rt{ font-family:var(--sans); font-weight:900; font-size:34px; line-height:1; letter-spacing:-0.03em; min-width:48px; text-align:right; }
+
+  .t-goat{ color:var(--t-goat); }
+  .t-elite{ color:var(--t-elite); }
+  .t-great{ color:var(--t-great); }
+  .t-good{ color:var(--t-good); }
+</style>
+</head>
+<body>
+  <div class="pitch">
+    <div class="eyebrow"><span class="emblem">6️⃣🔄</span> Daily NBA Puzzle</div>
+    <div class="wordmark">SIX <b>SPINS</b></div>
+    <div class="rule"></div>
+    <div class="tagline">Build the <span class="goat">GOAT</span> in six&nbsp;spins.</div>
+    <div class="sub">Steal one rating each spin · <b>~60 seconds a day</b></div>
+    <div class="chips">
+      <div class="chip"><span class="n t-goat">99</span><span class="l">Shoot</span></div>
+      <div class="chip"><span class="n t-elite">96</span><span class="l">Score</span></div>
+      <div class="chip"><span class="n t-elite">94</span><span class="l">Pass</span></div>
+      <div class="chip"><span class="n t-great">88</span><span class="l">Def</span></div>
+      <div class="chip"><span class="n t-great">85</span><span class="l">Reb</span></div>
+      <div class="chip"><span class="n t-good">80</span><span class="l">Clutch</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__brand">
+      <span class="card__logo">SIX <b>SPINS</b></span>
+      <span class="card__daily">DAILY #128</span>
+    </div>
+    <div class="card__head">
+      <div class="card__score">
+        <span class="card__ovr">99</span>
+        <span class="card__ceil">OVR</span>
+      </div>
+      <span class="card__badge">GOAT</span>
+    </div>
+    <div class="rows">
+      <div class="row" style="--team:#1D428A">
+        <span class="ava">SC</span>
+        <span class="who"><span class="ab">Shooting</span><span class="nm">Stephen Curry</span><span class="tm">Warriors</span></span>
+        <span class="rt t-goat">99</span>
+      </div>
+      <div class="row" style="--team:#CE1141">
+        <span class="ava">MJ</span>
+        <span class="who"><span class="ab">Scoring</span><span class="nm">Michael Jordan</span><span class="tm">Bulls</span></span>
+        <span class="rt t-elite">96</span>
+      </div>
+      <div class="row" style="--team:#552583">
+        <span class="ava">MJ</span>
+        <span class="who"><span class="ab">Playmaking</span><span class="nm">Magic Johnson</span><span class="tm">Lakers</span></span>
+        <span class="rt t-great">88</span>
+      </div>
+      <div class="row" style="--team:#007A33">
+        <span class="ava">LB</span>
+        <span class="who"><span class="ab">Rebounding</span><span class="nm">Larry Bird</span><span class="tm">Celtics</span></span>
+        <span class="rt t-good">80</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
