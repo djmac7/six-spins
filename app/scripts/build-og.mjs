@@ -79,7 +79,7 @@ const html = `<!doctype html>
     letter-spacing:-0.025em; color:var(--ink); margin-bottom:16px;
   }
   .tagline .goat{ color:var(--accent-deep); font-weight:800; }
-  .sub{ font-size:22px; font-weight:500; color:var(--ink-2); letter-spacing:-0.01em; margin-bottom:38px; line-height:1.4; max-width:470px; text-wrap:balance; }
+  .sub{ font-size:22px; font-weight:500; color:var(--ink-2); letter-spacing:-0.01em; margin-bottom:38px; line-height:1.4; max-width:520px; }
 
   /* one clean value line describing the LOOP (the card already shows the numbers, so chips
      that repeat them were redundant — this tells a first-timer what the game actually is) */
@@ -132,7 +132,7 @@ const html = `<!doctype html>
     <div class="eyebrow"><span class="emblem">6️⃣🔄</span> Daily NBA Puzzle</div>
     <div class="wordmark">SIX <b>SPINS</b></div>
     <div class="tagline">Build the <span class="goat">GOAT</span> in six&nbsp;spins.</div>
-    <div class="sub">Steal one elite rating each spin. About a minute a day.</div>
+    <div class="sub">Steal one elite rating each&nbsp;spin.<br>About a minute a day.</div>
     <div class="format">
       <span><b>6</b> spins</span><span class="dot"></span>
       <span><b>6</b> abilities</span><span class="dot"></span>
