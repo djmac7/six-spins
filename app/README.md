@@ -12,14 +12,20 @@ logic lives in the data workstream (`../pipeline`).
 ## Game modes (virality layer)
 
 Every board is driven by a **seed**, so any run is reproducible and shareable as a link.
-A persistent `ModeBar` (top) switches between:
+Six Spins ships as an **Unlimited** game — there is no one-a-day cadence. You keep spinning
+fresh random boards and chase a **99 OVR** player.
 
-- **Daily** — one puzzle a day, the *same six spins for everyone* (`seed = "daily-<date>"`).
-  The result is saved to `localStorage`; it can't be re-rolled, and it powers a 🔥 **streak**.
-  This is the Wordle scarcity loop (comparable scores, a reason to return).
-- **Unlimited** — play as many as you like; each gets a fresh random seed.
-- **Archive** — HoopGrids-style grid of past days, today first. Completed days show your
-  result and re-open to it; unplayed days are playable.
+- **Unlimited** (shipping) — play as many as you like; each gets a fresh random seed.
+- **Daily** — one puzzle a day, the *same six spins for everyone* (`seed = "daily-<date>"`),
+  saved to `localStorage`, un-re-rollable, powering a 🔥 **streak**. **PARKED** behind
+  `DAILY_ENABLED` in [`config.js`](src/config.js) (currently `false`) — built and tested but
+  not shipped. Every daily/archive/streak code path is gated on that flag.
+- **Archive** — HoopGrids-style grid of past days. Part of the parked Daily feature; also
+  gated on `DAILY_ENABLED`.
+
+> Because Daily is parked, all user-facing copy (`index.html`, `public/how-to-play.html`,
+> in-app text) describes Six Spins as an NBA **puzzle game** you keep playing — **not** a
+> one-a-day daily puzzle. Keep new copy consistent with that until `DAILY_ENABLED` flips.
 
 Determinism is **path-independent**: draws are keyed by `(seed, spinNumber, purpose, cell)`
 rather than a sequential stream, so a player's optional rerolls never shift the cells anyone

@@ -59,7 +59,7 @@ const DOCS = {
         </p>
         <h3>What we store</h3>
         <ul>
-          <li><b>On your device only:</b> your settings, your daily-puzzle results, and your streak are saved in your browser's local storage. This never leaves your device and we cannot see it. Clearing your browser data erases it.</li>
+          <li><b>On your device only:</b> your settings and your game results are saved in your browser's local storage. This never leaves your device and we cannot see it. Clearing your browser data erases it.</li>
           <li><b>Basic, anonymous analytics</b> may be used to understand aggregate traffic (e.g., how many people played). This does not identify you.</li>
         </ul>
         <h3>Advertising</h3>

@@ -1,7 +1,7 @@
 {
-  "name": "Six Spins — Daily NBA GOAT Puzzle",
+  "name": "Six Spins — NBA GOAT Puzzle Game",
   "short_name": "Six Spins",
-  "description": "Build the NBA GOAT in six spins. A free daily basketball puzzle: steal one ability rating each spin and share your percentile.",
+  "description": "Build the NBA GOAT in six spins. A free basketball puzzle game: steal one ability rating each spin, keep spinning, and chase a 99 OVR.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
