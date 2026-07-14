@@ -204,6 +204,17 @@ body {
   .ad-rail--left  { left:  min(calc(50% - var(--frame) / 2 - 304px), calc(25% - var(--frame) / 4 - 150px)); }
   .ad-rail--right { right: min(calc(50% - var(--frame) / 2 - 304px), calc(25% - var(--frame) / 4 - 150px)); }
 }
+
+/* ---------- Embed mode (?embed=1) ----------
+   Six Spins iframed into a partner site (see index.html): the host owns the chrome and
+   never loads RevIQ, so drop every ad surface and reclaim the space the sticky anchor ad
+   would have reserved — the board then fills the frame instead of being squeezed/cut off. */
+html[data-embed] .ad-rail,
+html[data-embed] .ad-video { display: none !important; }
+@media (min-width: 860px) {
+  /* base rule reserves 84px for the anchor ad that never renders here — trim to a small gutter */
+  html[data-embed] .game-screen { padding-bottom: 24px; }
+}
 @keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
 /* ---------- boot / lazy loader ---------- */

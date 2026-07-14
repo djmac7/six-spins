@@ -4,8 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- RevIQ tag -->
-    <script src="//js.rev.iq/sixspins.com" defer></script>
+    <!-- RevIQ tag. Embed mode: when Six Spins is iframed into a partner site with ?embed=1
+         (e.g. Hardwood's Arcade), the host owns the page chrome and there's no room for our
+         ad furniture — so we mark <html data-embed> for the CSS to drop the ad rails and
+         reclaim the reserved anchor-ad space, and skip loading the ad script entirely.
+         Otherwise load RevIQ as usual. Runs in <head> so data-embed is set before first paint. -->
+    <script>
+      (function () {
+        var embed = false;
+        try { embed = new URLSearchParams(location.search).has('embed'); } catch (e) {}
+        if (embed) {
+          document.documentElement.setAttribute('data-embed', '');
+        } else {
+          var s = document.createElement('script');
+          s.src = '//js.rev.iq/sixspins.com';
+          s.defer = true;
+          document.head.appendChild(s);
+        }
+      })();
+    </script>
 
     <!-- Primary SEO -->
     <title>Six Spins to 99 OVR — NBA Puzzle Game</title>
