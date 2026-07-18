@@ -32,8 +32,17 @@ min_roster: 8             # a cell needs >= this many qualifying players to be p
 roster_includes:
   2010s_TOR: [leonaka01]  # Kawhi — 2019 Finals MVP & title in one season; too few minutes to rank
   2010s_HOU: [paulch01]   # Chris Paul — 65-win Rockets, Game 7 of the 2018 WCF
-  2000s_DEN: [billuch01]  # Chauncey Billups — hometown trade, led Denver to the 2009 WCF
+  2000s_DEN: [billuch01, anderch01]  # Chauncey Billups (2009 WCF); Chris "Birdman" Andersen (fan recognition)
   2020s_BRK: [hardeja01, irvinky01]  # Nets "Big 3" era alongside Durant
+  # fan-recognition keeps — recognizable names that never made an All-Star/All-NBA/All-D team
+  # or won an award, so the minutes cut alone drops them (see recognized_star_seasons)
+  2000s_LAC: [milesda01]  # Darius Miles — #3-pick hype, cultural figure
+  2010s_PHI: [noelne01]   # Nerlens Noel — "The Process" era, #6 pick
+  2020s_ORL: [isaacjo01]  # Jonathan Isaac — defensive standout, outspoken
+  2010s_SAC: [baglema01]  # Marvin Bagley III — drafted #2 over Luka
+  2010s_MIL: [sandela01]  # Larry Sanders — DPOY-caliber, the walk-away story
+  2020s_POR: [clingdo01]  # Donovan Clingan — current, UConn champ, #7 pick
+  1990s_CHO: [burresc01]  # Scott Burrell — "The Last Dance" fame
 
 # the year axis — `all` = every season in the filtered universe (era_min_season onward).
 # (A explicit list is still honored if you want to narrow the pool back down.)

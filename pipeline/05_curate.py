@@ -51,10 +51,25 @@ def recognized_star_seasons(cfg):
     a = read_table(cfg, "All-Star Selections.csv", ["season", "lg", "player_id"])
     a = a[a["lg"].str.upper().isin(["NBA", "BAA"])]
     pairs |= set(zip(a["player_id"], pd.to_numeric(a["season"], errors="coerce")))
-    # All-NBA + All-Defensive teams (End of Season Teams voting file)
-    v = read_table(cfg, "End of Season Teams (Voting).csv", ["season", "type", "player_id"])
-    v = v[v["type"].isin(["all_nba", "all_defense"])]
+    # All-NBA + All-Defensive TEAM SELECTIONS — actual selectees, from the selections file
+    # (End of Season Teams.csv), NOT the voting file. The voting file lists everyone who drew
+    # even a single stray vote, which force-included defensive role players (Austin Rivers,
+    # Matt Barnes: one All-Defensive vote apiece, never selected) ahead of high-minute non-
+    # voted scorers (JJ Redick, Jamal Crawford: elite offense, zero votes) and crowded them off
+    # rosters. A genuine selection = named to an All-NBA/All-Defensive team. All-Star selectees
+    # (above) and real All-NBA/All-D selectees stay force-included; only vote-getters drop.
+    v = read_table(cfg, "End of Season Teams.csv", ["season", "lg", "type", "player_id"])
+    v = v[v["lg"].astype("string").str.upper().isin(["NBA", "BAA"])]
+    v = v[v["type"].isin(["All-NBA", "All-Defense"])]
     pairs |= set(zip(v["player_id"], pd.to_numeric(v["season"], errors="coerce")))
+    # Major individual award WINNERS (MVP, DPOY, ROY, 6th Man, MIP, Clutch POY) — recognized
+    # stars regardless of minutes, and the signal that keeps notable short-tenure names a casual
+    # expects (a ROY, a 6MOY) on their team even when they never made an All-NBA/All-Defense/
+    # All-Star cut. Winners only (not award vote-getters), NBA/BAA (drop ABA, per the pool).
+    aw = read_table(cfg, "Player Award Shares.csv", ["season", "award", "player_id", "winner"])
+    aw = aw[(aw["winner"] == True) & aw["award"].isin(
+        ["nba mvp", "nba dpoy", "nba roy", "nba smoy", "nba mip", "nba clutch_poy", "baa roy"])]
+    pairs |= set(zip(aw["player_id"], pd.to_numeric(aw["season"], errors="coerce")))
     return {(p, int(s)) for p, s in pairs if pd.notna(s)}
 
 RATINGS = ["shooting", "scoring", "playmaking",
