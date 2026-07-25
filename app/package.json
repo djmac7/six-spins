@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Six Spins — single-session mobile-first React game (App spec v1).",
   "scripts": {
+    "sync-ads": "node scripts/sync-ads.mjs",
     "sync-data": "node scripts/sync-data.mjs",
     "sync-design": "node scripts/sync-design.mjs",
     "make-placeholder": "node scripts/make-placeholder.mjs",

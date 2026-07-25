@@ -1,0 +1,54 @@
+name: Sync ads.txt
+
+# Mirrors the RevIQ-managed ads.txt (source of truth: https://rev.iq/sixspins.com/ads.txt)
+# into app/public/ads.txt and commits any change straight to main. The committed file is
+# what the Vite build copies into dist/ and GitHub Pages serves at /ads.txt.
+#
+# NOTE: a push made with the default GITHUB_TOKEN does NOT retrigger other workflows, so
+# after committing we dispatch deploy.yml explicitly to publish the refreshed file.
+on:
+  schedule:
+    - cron: '17 6 * * *' # daily ~06:17 UTC (off-peak; avoids top-of-hour runner congestion)
+  workflow_dispatch:
+
+permissions:
+  contents: write # commit the refreshed ads.txt to main
+  actions: write # dispatch deploy.yml after a change
+
+# never let two syncs race to push
+concurrency:
+  group: sync-ads-txt
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch canonical ads.txt
+        run: node app/scripts/sync-ads.mjs
+
+      - name: Commit if changed
+        id: commit
+        run: |
+          if [[ -z "$(git status --porcelain app/public/ads.txt)" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "ads.txt already up to date — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/public/ads.txt
+          git commit -m "ads.txt: sync from rev.iq ($(date -u +%Y-%m-%d))"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy the refreshed file
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref main
