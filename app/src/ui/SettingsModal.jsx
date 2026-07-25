@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Sun, Moon, ChevronRight } from 'lucide-react'
 import InfoModal from './InfoModal.jsx'
+import { ERAS } from '../constants.js'
 
 const ABOUT_LINKS = [
   { key: 'methodology', label: 'Attributes Methodology', desc: 'How the ratings are calculated.' },
@@ -10,7 +11,7 @@ const ABOUT_LINKS = [
 ]
 
 // Settings overlay: appearance (light/dark) + difficulty (hide player stats) + about/legal.
-export default function SettingsModal({ settings, update, onClose }) {
+export default function SettingsModal({ settings, update, era, onEra, onClose }) {
   const [doc, setDoc] = useState(null)
   if (doc) return <InfoModal doc={doc} onBack={() => setDoc(null)} onClose={onClose} />
   return createPortal(
@@ -35,6 +36,27 @@ export default function SettingsModal({ settings, update, onClose }) {
             </button>
           </div>
         </div>
+
+        {onEra && (
+          <div className="setting-row">
+            <div className="setting-row__text">
+              <span className="setting-row__label">Era</span>
+              <span className="setting-row__desc">Which players the pool draws from.</span>
+            </div>
+            <div className="segmented" role="group" aria-label="Game era">
+              {ERAS.map((e) => (
+                <button
+                  key={e.id}
+                  className={'seg' + (era === e.id ? ' active' : '')}
+                  aria-pressed={era === e.id}
+                  onClick={() => era !== e.id && onEra(e.id)}
+                >
+                  {e.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="setting-row">
           <div className="setting-row__text">

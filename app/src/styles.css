@@ -951,6 +951,20 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .modebar__logo { font-size: 20px; line-height: 1; letter-spacing: -0.06em; display: inline-block; transform-origin: center; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
 /* easter egg: hover the logo and it grows a touch and spins */
 .modebar__brand:hover .modebar__logo { transform: scale(1.25) rotate(360deg); }
+/* attribution: "by [logo] DUNKWISE" -> dunkwise.com, sits right after the Six Spins mark.
+   The wordmark matches Dunkwise's own logo lockup: Geist Mono, uppercase, wide tracking. */
+.modebar__by {
+  display: inline-flex; align-items: center; gap: 5px; text-decoration: none; white-space: nowrap;
+  font-size: 11px; color: var(--faint);
+  padding: 3px 6px; border-radius: 999px; transition: color 0.15s ease, background 0.15s ease;
+}
+.modebar__by-pre { font-weight: 600; opacity: 0.8; }
+.modebar__by-logo { display: block; width: 16px; height: 16px; border-radius: 3px; }
+.modebar__by-name {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+}
+.modebar__by:active { transform: scale(0.97); }
 /* Restart: deliberately quiet — a muted text+icon affordance, not a glaring CTA */
 .modebar__new {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-family: inherit;
@@ -1209,6 +1223,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* modebar */
   .modebar__new:hover, .modebar__new:hover svg { color: var(--muted); }
+  .modebar__by:hover { color: var(--text); background: var(--surface2); }
+  .modebar__by:hover .modebar__by-name { color: #d96e3a; }
   .modebar__erabtn:hover { color: var(--muted); background: var(--surface2); border-color: var(--border); }
   .modebar__menulist button:hover { background: var(--surface2); }
   .modebar__icon:hover, .modebar__menu:hover { background: var(--surface2); color: var(--text); }
