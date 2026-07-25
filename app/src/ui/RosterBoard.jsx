@@ -4,7 +4,7 @@ import { ABILITY_META, STAT_LINE } from '../constants.js'
 import Avatar from './Avatar.jsx'
 import TeamLogo from './TeamLogo.jsx'
 import AbilityIcon from './AbilityIcon.jsx'
-import { playerPhotoUrl } from './assets.js'
+import { playerPhotoUrl, dunkwisePlayerUrl, DUNKWISE_MARK } from './assets.js'
 import { readableText } from './helpers.js'
 
 // Per-game stats always show one decimal place (3 -> "3.0").
@@ -189,6 +189,18 @@ function AssignSheet({ player, openAbilities, team, hideStats = false, activeSta
             <div className="sheet__name">{player.name}</div>
             <div className="sheet__sub">{player.team_label || team.label}</div>
           </div>
+          {dunkwisePlayerUrl(player) && (
+            <a
+              className="sheet__dw"
+              href={dunkwisePlayerUrl(player)}
+              target="_blank"
+              rel="noopener"
+              aria-label={`View ${player.name} stats on Dunkwise (opens dunkwise.com)`}
+            >
+              <img src={DUNKWISE_MARK} width="18" height="18" alt="" aria-hidden="true" />
+              <span className="dw-tip" role="tooltip">View stats on <span className="dw-word">Dunkwise</span></span>
+            </a>
+          )}
         </div>
         {!hideStats && (
           <div className="sheet__statline">

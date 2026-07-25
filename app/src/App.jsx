@@ -158,6 +158,8 @@ function Shell({ game }) {
     <div className="app-frame">
       <ModeBar
         session={nav.session}
+        era={activeEra}
+        onEra={pickEra}
         dailyEnabled={DAILY_ENABLED}
         onDaily={goto.daily}
         onUnlimited={goto.unlimited}
@@ -183,7 +185,7 @@ function Shell({ game }) {
         />
       )}
 
-      {settingsOpen && <SettingsModal settings={settings} update={updateSettings} era={activeEra} onEra={pickEra} onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsModal settings={settings} update={updateSettings} onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

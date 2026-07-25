@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SlidersHorizontal, Users } from 'lucide-react'
+import { ERAS } from '../constants.js'
 
 // Logo: the 6 + shuffle emoji (the one bit of emoji we keep — everything else is SVG icons).
 // Click = home (a fresh game).
@@ -31,18 +32,40 @@ function ByDunkwise() {
     >
       <span className="modebar__by-pre">by</span>
       <img className="modebar__by-logo" src={`${B}dunkwise-mark.svg`} width="16" height="16" alt="" aria-hidden="true" />
-      <span className="modebar__by-name">dunkwise</span>
+      <span className="modebar__by-name dw-word">dunkwise</span>
     </a>
   )
 }
 
-// Era selection (Classic / Modern Era) now lives inside the Settings modal — see
-// SettingsModal — so the top bar stays to the brand + mode + menu.
+// Era toggle: a compact two-state segmented control (Classic / Modern Era) in the top bar,
+// just left of the settings icon. On hover/focus it reveals a tooltip with its description
+// (there's no room for descriptive text in the slim bar). Switching restarts the current
+// board on the new pool (App keys the Game on the era).
+const ERA_TIP = 'Which players the pool draws from'
+function EraToggle({ era, onEra }) {
+  if (!onEra) return null
+  return (
+    <div className="era-toggle" data-tip={ERA_TIP}>
+      <div className="segmented segmented--nav" role="group" aria-label={`Game era — ${ERA_TIP}`}>
+        {ERAS.map((e) => (
+          <button
+            key={e.id}
+            className={'seg' + (era === e.id ? ' active' : '')}
+            aria-pressed={era === e.id}
+            onClick={() => era !== e.id && onEra(e.id)}
+          >
+            {e.id === 'modern' ? 'Modern' : e.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 // Slim persistent top bar. Background spans the full viewport width (full-bleed) while the
 // content stays aligned to the app frame. Daily parked -> minimal 82-0-style header; Daily on
 // -> adds a mode pill + a Daily / Unlimited / Archive menu.
-export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlimited, onArchive, onBrowse, onOpenSettings }) {
+export default function ModeBar({ session, era, onEra, dailyEnabled = true, onDaily, onUnlimited, onArchive, onBrowse, onOpenSettings }) {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const pick = (fn) => () => { close(); fn() }
@@ -69,6 +92,7 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
           </div>
           <div className="modebar__right">
             {browseBtn}
+            <EraToggle era={era} onEra={onEra} />
             {settingsBtn}
           </div>
         </div>
@@ -85,6 +109,7 @@ export default function ModeBar({ session, dailyEnabled = true, onDaily, onUnlim
         </div>
         <div className="modebar__right">
           <span className={'modebar__mode mode-' + session.mode}>{session.label}</span>
+          <EraToggle era={era} onEra={onEra} />
           {settingsBtn}
           <button
             className="modebar__menu"

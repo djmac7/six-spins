@@ -509,6 +509,27 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .opt__label { flex: 1; text-align: left; font-weight: 700; font-size: 15px; }
 .opt__go { font-size: 22px; color: var(--faint); font-weight: 700; }
 .sheet__cancel { width: 100%; margin-top: 12px; background: transparent; border: none; color: var(--muted); font-weight: 600; padding: 10px; cursor: pointer; font-family: inherit; }
+/* Quiet Dunkwise-logo link to the player's page on Dunkwise, top-right of the draft sheet.
+   Icon-only so it never crowds the player name; a title tooltip carries the description. */
+.sheet__dw {
+  position: relative;
+  flex: none; align-self: flex-start; display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px; border-radius: 8px; opacity: 0.45; background: transparent;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.sheet__dw img { display: block; width: 18px; height: 18px; border-radius: 4px; }
+.sheet__dw:active { transform: scale(0.94); }
+/* Styled tooltip: "View stats on DUNKWISE" (brand wordmark), appears on hover/focus. */
+.dw-tip {
+  position: absolute; top: calc(100% + 7px); right: 0; z-index: 45;
+  display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;
+  padding: 5px 8px; border-radius: 7px;
+  font-size: 11px; font-weight: 600; color: var(--surface); background: var(--text); box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(-2px); pointer-events: none;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.dw-tip .dw-word { font-size: 11px; color: var(--surface); }
+.sheet__dw:hover .dw-tip, .sheet__dw:focus-visible .dw-tip { opacity: 0.97; transform: translateY(0); }
 
 /* ---------- reveal ---------- */
 .reveal-screen { align-items: stretch; justify-content: flex-start; gap: 16px; }
@@ -960,11 +981,29 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .modebar__by-pre { font-weight: 600; opacity: 0.8; }
 .modebar__by-logo { display: block; width: 16px; height: 16px; border-radius: 3px; }
-.modebar__by-name {
-  font-family: var(--mono); font-size: 12px; font-weight: 600;
-  letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
-}
+.modebar__by-name { font-size: 12px; color: var(--muted); }
 .modebar__by:active { transform: scale(0.97); }
+/* The Dunkwise wordmark, everywhere it appears: Geist Mono, uppercase, wide tracking —
+   matching Dunkwise's own logo lockup. */
+.dw-word { font-family: var(--mono); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* Era toggle in the top bar (Classic / Modern), left of the settings icon. Compact segmented
+   control + a hover/focus tooltip carrying its description. */
+.era-toggle { position: relative; display: inline-flex; }
+.segmented--nav { padding: 2px; border-radius: 8px; }
+.segmented--nav .seg {
+  padding: 5px 9px; font-size: 11px; font-weight: 700; letter-spacing: 0.01em; gap: 0;
+}
+.era-toggle::after {
+  content: attr(data-tip);
+  position: absolute; top: calc(100% + 7px); right: 0;
+  padding: 5px 8px; border-radius: 7px; white-space: nowrap; z-index: 45;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.01em; color: var(--surface);
+  background: var(--text); box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(-2px); pointer-events: none;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.era-toggle:hover::after, .era-toggle:focus-within::after { opacity: 0.96; transform: translateY(0); }
 /* Restart: deliberately quiet — a muted text+icon affordance, not a glaring CTA */
 .modebar__new {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-family: inherit;
@@ -1225,6 +1264,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .modebar__new:hover, .modebar__new:hover svg { color: var(--muted); }
   .modebar__by:hover { color: var(--text); background: var(--surface2); }
   .modebar__by:hover .modebar__by-name { color: #d96e3a; }
+  .sheet__dw:hover { opacity: 1; background: var(--surface2); }
   .modebar__erabtn:hover { color: var(--muted); background: var(--surface2); border-color: var(--border); }
   .modebar__menulist button:hover { background: var(--surface2); }
   .modebar__icon:hover, .modebar__menu:hover { background: var(--surface2); color: var(--text); }
