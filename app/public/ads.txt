@@ -3,7 +3,7 @@
 # advertising technology. Contact us at demand@rev.iq
 
 # Version reviq-v1.1
-# Last Updated: July 10, 2026
+# Last Updated: July 24, 2026
 
 ownerdomain=sixspins.com
 managerdomain=rev.iq
@@ -124,10 +124,13 @@ appnexus.com, 8233, RESELLER
 Driftpixel.ai, 12747655, DIRECT
 
 # Geniee
-genieesspv.jp, 224576, DIRECT
+"genieesspv.jp, 38623, RESELLER
+appnexus.com, 16480, RESELLER, f5ab79cb980f11d1
 rubiconproject.com, 11534, RESELLER, 0bfd66d529a55807
 indexexchange.com, 192304, RESELLER, 50b1c356f2c5c8fc
-mgid.com, 216831, DIRECT, d4c29acad76ce94f
+pubmatic.com, 156322, RESELLER, 5d62403b186f2ace
+openx.com, 562132006, RESELLER, 6a698e2ec38604c6
+video.unrulymedia.com, 234364657, RESELLER, 98c21ef9a666c68b"
 
 # Google
 google.com, pub-8106464143521063, DIRECT, f08c47fec0942fa0
@@ -229,6 +232,9 @@ appnexus.com, 7044, RESELLER
 pubmatic.com, 156313, RESELLER, 5d62403b186f2ace
 pubmatic.com, 157962, RESELLER, 5d62403b186f2ace
 admanmedia.com, 2396, RESELLER
+spotim.market, e9a771d72c076dbe3cafc2c6477f9238, RESELLER, 077e5f709d15bdbb
+conversantmedia.com, 101273, RESELLER, 03113cd04947736d
+triplelift.com, 14829, RESELLER, 6c33edb13117fd86
 
 # Omnidex
 omni-dex.io, 100008, DIRECT
@@ -246,7 +252,7 @@ insticator.com, 5062ba28-80ed-416e-86c0-5c05b7dbd10a, DIRECT, b3511ffcafb23a32
 waardex.com, 236146, DIRECT
 crystall.io, 336147, DIRECT
 
-# Openweb
+# OpenWeb
 spotim.market, c6def778f9cd04882ace86d9d1629fd5, DIRECT, 077e5f709d15bdbb
 adyoulike.com, c6def778f9cd04882ace86d9d1629fd5, DIRECT
 triplelift.com, 10504, RESELLER, 6c33edb13117fd86
@@ -326,6 +332,8 @@ smaato.com, 1100059691, RESELLER, 07bcf65f187117b4
 smaato.com, 1100004890, RESELLER, 07bcf65f187117b4
 improvedigital.com, 2669, RESELLER
 
+adingo.jp, 34779, DIRECT
+
 # Pubmatic
 pubmatic.com, 165146, DIRECT, 5d62403b186f2ace #Prebid
 pubmatic.com, 165150, DIRECT, 5d62403b186f2ace #OB
@@ -402,6 +410,7 @@ seedtag.com, 686be9b157dbaa000742061a, DIRECT
 xandr.com, 4009, DIRECT, f5ab79cb980f11d1
 smartadserver.com, 3050, DIRECT
 rubiconproject.com, 17280, DIRECT, 0bfd66d529a55807
+sharethrough.com, 3050, RESELLER, d53b998a7bd4ecd2
 
 # Smilewanted
 smilewanted.com, 5042, DIRECT
