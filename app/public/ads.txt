@@ -3,7 +3,7 @@
 # advertising technology. Contact us at demand@rev.iq
 
 # Version reviq-v1.1
-# Last Updated: August 16, 2026
+# Last Updated: August 18, 2026
 
 ownerdomain=sixspins.com
 managerdomain=rev.iq
@@ -411,6 +411,40 @@ smartadserver.com, 3050, DIRECT
 rubiconproject.com, 17280, DIRECT, 0bfd66d529a55807
 sharethrough.com, 3050, RESELLER, d53b998a7bd4ecd2
 
+# Silverpush
+vidgyor.com, 20133, DIRECT
+google.com, pub-8863191426564274, RESELLER, f08c47fec0942fa0
+pubmatic.com, 162319, DIRECT, 5d62403b186f2ace
+rubiconproject.com, 24246, RESELLER, 0bfd66d529a55807
+smartadserver.com, 4734, RESELLER, 060d053dcf45cbf3
+smartadserver.com, 4734-OB, RESELLER, 060d053dcf45cbf3
+openx.com, 559803239, RESELLER, 6a698e2ec38604c6
+freewheel.tv, 1601851, RESELLER
+freewheel.tv, 1601860, RESELLER
+google.com, pub-4586415728471297, DIRECT, f08c47fec0942fa0
+rubiconproject.com, 24872, RESELLER, 0bfd66d529a55807
+rubiconproject.com, 24874, RESELLER, 0bfd66d529a55807
+Adsolut.in, 17164, DIRECT
+Playstream.media, 2294, DIRECT
+google.com, pub-6070398767421094, RESELLER, f08c47fec0942fa0
+google.com, pub-2561470205289901, RESELLER, f08c47fec0942fa0
+aps.amazon.com, 5d8ed25e-57cc-441a-b62a-127b34faae4e, DIRECT
+vuukle.com, f6efd7fb-07ab-4cd7-886f-44bfc6549ad0, DIRECT, c8034d3da4547abf
+google.com, pub-3494520468788589, DIRECT, f08c47fec0942fa0
+datawrkz.com, 2478, DIRECT
+google.com, pub-8856559311549217, RESELLER, f08c47fec0942fa0
+appnexus.com, 11470, RESELLER
+embi-media.com, 0600, DIRECT
+google.com, pub-2768830610135793, RESELLER, f08c47fec0942fa0
+ogury.com, f93dbbc2-8c8e-455d-b2fc-935fdf93c958, DIRECT
+pubmatic.com, 163238, RESELLER, 5d62403b186f2ace
+rubiconproject.com, 22884, DIRECT, 0bfd66d529a55807
+rubiconproject.com, 25198, RESELLER, 0bfd66d529a55807
+smartadserver.com, 4537, RESELLER, 060d053dcf45cbf3
+thebrave.io, 1234746, RESELLER, c25b2154543746ac
+triplelift.com, 7660, DIRECT, 6c33edb13117fd86
+video.unrulymedia.com, 533898005, RESELLER
+
 # Smilewanted
 smilewanted.com, 5042, DIRECT
 rubiconproject.com, 19814, RESELLER, 0bfd66d529a55807
@@ -418,6 +452,7 @@ pubmatic.com, 158810, RESELLER, 5d62403b186f2ace
 appnexus.com, 10040, RESELLER
 onetag.com, 7f5d22b0006ab5a, RESELLER
 videoheroes.tv, 212648, RESELLER, 064bc410192443d8
+zetaglobal.net, 964, RESELLER
 
 # Sparteo
 flashb.id, 0d6fcb92-822c-5644-b5fc-b3927e90c71b, DIRECT
